@@ -443,7 +443,7 @@ p {
 .map-guide-character {
   position: absolute;
   right: -4%;
-  bottom: -7svh;
+  bottom: -2svh;
   z-index: 1;
   width: min(32svh, 278px);
   height: min(32svh, 278px);
