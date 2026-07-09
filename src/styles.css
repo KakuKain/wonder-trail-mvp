@@ -37,6 +37,11 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+#root {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
 button {
   font: inherit;
   touch-action: manipulation;
@@ -336,12 +341,14 @@ p {
 
 .chapter-select-screen {
   display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
   min-height: 100svh;
-  place-items: start center;
+  place-items: stretch;
 }
 
 .chapter-select-copy {
-  width: auto;
+  width: 100%;
   max-width: none;
   padding: 0;
   border: 0;
@@ -364,7 +371,7 @@ p {
   position: relative;
   --home-map-size: 118svh;
   --home-map-y: -19svh;
-  width: 100vw;
+  width: 100%;
   max-width: none;
   height: 100svh;
   max-height: none;
@@ -386,7 +393,7 @@ p {
   top: 0;
   left: 0;
   z-index: 1;
-  width: 100vw;
+  width: 100%;
   height: 100svh;
   overflow: hidden;
 }
@@ -1209,7 +1216,7 @@ p {
 .collection-reward-screen {
   isolation: isolate;
   display: block;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   height: 100svh;
   min-height: 100svh;
@@ -2258,6 +2265,66 @@ p {
   font-size: 1.35rem;
 }
 
+@media (min-width: 781px) {
+  body {
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 8%, rgba(255, 244, 197, 0.72), transparent 30%),
+      linear-gradient(180deg, #dfeeda, #f5ecc9);
+  }
+
+  #root {
+    display: grid;
+    width: min(430px, 100vw);
+    min-height: 100svh;
+    margin: 0 auto;
+  }
+
+  .app-shell {
+    position: relative;
+    width: min(430px, 100vw);
+    height: 100svh;
+    min-height: 100svh;
+    margin: 0 auto;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(72, 48, 30, 0.08),
+      0 18px 48px rgba(39, 47, 30, 0.22);
+  }
+
+  .topbar,
+  .progress-wrap,
+  .stage-layout,
+  .intro-screen,
+  .chapter-select-screen,
+  .reward-screen,
+  .complete-screen {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .app-shell.screen-intro,
+  .app-shell.screen-stage,
+  .app-shell.screen-reward,
+  .app-shell.screen-complete {
+    padding: 0;
+  }
+
+  .chapter-select-screen,
+  .stage-layout,
+  .collection-reward-screen,
+  .complete-screen {
+    height: 100svh;
+    min-height: 100svh;
+  }
+
+  .island-map,
+  .map-scene-frame,
+  .collection-reward-screen {
+    width: 100%;
+  }
+}
+
 @media (max-width: 780px) {
   .app-shell {
     padding:
@@ -2360,12 +2427,12 @@ p {
   }
 
   .chapter-select-copy {
-    width: auto;
+    width: 100%;
     padding: 0;
   }
 
   .island-map {
-    width: 100vw;
+    width: 100%;
     height: 100svh;
     max-height: none;
     border-width: 0;
@@ -2525,7 +2592,7 @@ p {
 
   .collection-reward-screen {
     display: block;
-    width: 100vw;
+    width: 100%;
     min-height: 100svh;
     padding: 0;
   }
