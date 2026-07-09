@@ -442,8 +442,8 @@ p {
 
 .map-guide-character {
   position: absolute;
-  right: 3%;
-  bottom: -4svh;
+  right: -4%;
+  bottom: -7svh;
   z-index: 1;
   width: min(32svh, 278px);
   height: min(32svh, 278px);
@@ -467,7 +467,7 @@ p {
   right: 0;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   left: 0;
-  z-index: 2;
+  z-index: 4;
   min-width: 0;
   width: 90%;
   max-width: 420px;
@@ -989,6 +989,29 @@ p {
   user-select: none;
 }
 
+.stage-loading-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 246, 192, 0.32), transparent 24%),
+    linear-gradient(180deg, #9ed481 0%, #6eb85e 48%, #487b3e 100%);
+  pointer-events: none;
+}
+
+.stage-loading-cover::before {
+  width: 54px;
+  height: 54px;
+  content: "";
+  border: 5px solid rgba(255, 248, 204, 0.58);
+  border-top-color: rgba(107, 70, 52, 0.72);
+  border-radius: 50%;
+  filter: drop-shadow(0 4px 0 rgba(75, 48, 31, 0.12));
+  animation: stageLoadingSpin 900ms linear infinite;
+}
+
 .forest-stage::before {
   position: absolute;
   inset: 0;
@@ -1022,6 +1045,16 @@ p {
   object-position: center center;
   transform-origin: center center;
   pointer-events: none;
+  opacity: 1;
+  transition: opacity 220ms ease;
+}
+
+.stage-loading .forest-art {
+  opacity: 0;
+}
+
+.stage-ready .forest-art {
+  opacity: 1;
 }
 
 .forest-illustration {
@@ -1169,6 +1202,12 @@ p {
   }
   50% {
     filter: brightness(1.22);
+  }
+}
+
+@keyframes stageLoadingSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

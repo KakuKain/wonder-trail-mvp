@@ -108,6 +108,7 @@ export function App() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [collectionPage, setCollectionPage] = useState(0);
+  const [stageBackgroundReady, setStageBackgroundReady] = useState(false);
   const [stageBackgroundIndex, setStageBackgroundIndex] = useState(() =>
     Math.floor(Math.random() * forestBackgrounds.length)
   );
@@ -160,8 +161,10 @@ export function App() {
 
   function beginStage(index = stageIndex) {
     const nextStage = stages[index];
+    const nextBackgroundIndex = Math.floor(Math.random() * forestBackgrounds.length);
     setStageIndex(index);
-    setStageBackgroundIndex(Math.floor(Math.random() * forestBackgrounds.length));
+    setStageBackgroundReady(false);
+    setStageBackgroundIndex(nextBackgroundIndex);
     setObjects(createPlacedObjects(nextStage));
     setWrongClicks(0);
     setHintsUsed(0);
@@ -219,7 +222,7 @@ export function App() {
   }
 
   function handleObjectClick(object: PlacedObject) {
-    if (screen !== "stage" || object.found) return;
+    if (screen !== "stage" || !stageBackgroundReady || object.found) return;
 
     if (object.isTarget) {
       const nextObjects = objects.map((item) =>
@@ -443,45 +446,57 @@ export function App() {
             />
           </aside>
 
-          <div className="forest-stage" aria-label={stage.instructionText}>
+          <div
+            className={`forest-stage ${stageBackgroundReady ? "stage-ready" : "stage-loading"}`}
+            aria-label={stage.instructionText}
+            aria-busy={!stageBackgroundReady}
+          >
             <img
+              key={stageBackground.image}
               className="forest-art"
               src={stageBackground.image}
               alt=""
               aria-hidden="true"
+              onLoad={() => setStageBackgroundReady(true)}
+              onError={() => setStageBackgroundReady(true)}
               style={{
                 objectPosition: stageBackground.position,
                 transform: `scale(${stageBackground.scale})`,
               }}
             />
-            <div className="stage-toolbar" aria-label="關卡工具列">
-              <button className="home-fab" type="button" aria-label="回桌面" onClick={returnToDesk}>
-                <HomeIcon />
-              </button>
-              {stage.mechanic === "search" && stage.targets && stage.targetLabel && stage.targetRuby && (
-                <div className="stage-hud">
-                  <div className="target-pill">
-                    <ObjectIcon assetId={stage.targets[0].assetId} compact />
-                    <span className="target-action">找找</span>
-                    <strong>
-                      <RubyText segments={[{ text: stage.targetLabel, ruby: stage.targetRuby }]} />
-                    </strong>
-                    <small className="count-badge">{foundTargets}/{totalTargets}</small>
-                  </div>
+            {!stageBackgroundReady && <div className="stage-loading-cover" aria-hidden="true" />}
+            {stageBackgroundReady && (
+              <>
+                <div className="stage-toolbar" aria-label="關卡工具列">
+                  <button className="home-fab" type="button" aria-label="回桌面" onClick={returnToDesk}>
+                    <HomeIcon />
+                  </button>
+                  {stage.mechanic === "search" && stage.targets && stage.targetLabel && stage.targetRuby && (
+                    <div className="stage-hud">
+                      <div className="target-pill">
+                        <ObjectIcon assetId={stage.targets[0].assetId} compact />
+                        <span className="target-action">找找</span>
+                        <strong>
+                          <RubyText segments={[{ text: stage.targetLabel, ruby: stage.targetRuby }]} />
+                        </strong>
+                        <small className="count-badge">{foundTargets}/{totalTargets}</small>
+                      </div>
+                    </div>
+                  )}
+                  <button className="hint-fab" type="button" aria-label="小航提示" onClick={showHint}>
+                    <LightbulbIcon />
+                  </button>
                 </div>
-              )}
-              <button className="hint-fab" type="button" aria-label="小航提示" onClick={showHint}>
-                <LightbulbIcon />
-              </button>
-            </div>
-            {objects.map((object) => (
-              <SearchObject
-                key={object.instanceId}
-                object={object}
-                hinted={hintVisible && object.isTarget && !object.found}
-                onSelect={() => handleObjectClick(object)}
-              />
-            ))}
+                {objects.map((object) => (
+                  <SearchObject
+                    key={object.instanceId}
+                    object={object}
+                    hinted={hintVisible && object.isTarget && !object.found}
+                    onSelect={() => handleObjectClick(object)}
+                  />
+                ))}
+              </>
+            )}
           </div>
         </section>
       )}
