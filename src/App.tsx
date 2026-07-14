@@ -589,7 +589,7 @@ export function App() {
                 onSpeak={speak}
               />
               <p>
-                <RubyText segments={dialogue.completeSummary(save.completedStageIds.length)} />
+                <RubyText segments={dialogue.completeSummary()} />
               </p>
             </div>
           </div>
@@ -623,80 +623,6 @@ export function App() {
         </section>
       )}
     </main>
-  );
-}
-
-function ForestSceneBackdrop() {
-  return (
-    <svg
-      className="forest-illustration forest-backdrop"
-      viewBox="0 0 1000 720"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <rect width="1000" height="720" fill="#d9eef0" />
-      <path d="M0 196C110 151 218 161 322 202C451 254 565 212 692 166C800 126 907 141 1000 185V720H0Z" fill="#e7f3cf" />
-      <path d="M0 305C136 257 253 268 381 316C494 358 631 336 738 286C850 234 931 247 1000 278V720H0Z" fill="#c6df90" />
-      <path d="M0 431C169 391 303 417 435 446C576 477 717 462 858 415C923 393 970 391 1000 399V720H0Z" fill="#a7cd75" />
-
-      <g className="distant-tree" transform="translate(52 94)">
-        <path d="M61 112C39 83 47 41 77 35C87 4 130 -3 145 29C177 23 205 48 197 81C226 96 218 139 184 146H78C67 142 61 130 61 112Z" fill="#8dbb72" />
-        <path d="M124 103V231" stroke="#ad7251" strokeWidth="30" strokeLinecap="round" />
-      </g>
-      <g className="distant-tree" transform="translate(734 92) scale(.92)">
-        <path d="M61 112C39 83 47 41 77 35C87 4 130 -3 145 29C177 23 205 48 197 81C226 96 218 139 184 146H78C67 142 61 130 61 112Z" fill="#83ad6a" />
-        <path d="M124 103V231" stroke="#9d6648" strokeWidth="30" strokeLinecap="round" />
-      </g>
-
-      <g transform="translate(208 119)">
-        <path d="M103 12C162 3 206 33 215 98L254 376C264 446 220 493 151 488L86 484C27 480 -7 437 2 379L45 103C51 59 69 24 103 12Z" fill="#b87955" />
-        <path d="M86 55C117 36 166 42 185 72C204 101 194 139 163 155C136 168 96 158 82 133C66 105 61 71 86 55Z" fill="#80533c" opacity=".42" />
-        <path d="M87 179C115 161 167 167 191 194C215 223 200 267 158 277C121 286 85 269 76 239C69 214 72 190 87 179Z" fill="#7d5038" />
-        <path d="M105 81C132 64 164 69 174 95C183 119 162 144 132 142C105 139 89 119 93 100C95 92 99 86 105 81Z" fill="#4f3327" />
-        <path d="M74 96C106 83 153 86 191 105" stroke="#d79b75" strokeWidth="8" strokeLinecap="round" opacity=".68" />
-        <path d="M57 210C90 196 162 199 211 226" stroke="#d79b75" strokeWidth="8" strokeLinecap="round" opacity=".62" />
-        <path d="M119 17C94 108 86 274 95 473" stroke="#845238" strokeWidth="7" strokeLinecap="round" opacity=".35" />
-        <path d="M169 26C150 133 152 314 163 478" stroke="#845238" strokeWidth="7" strokeLinecap="round" opacity=".32" />
-      </g>
-
-      <g transform="translate(544 178)">
-        <path d="M21 51L221 7L256 191L52 225Z" fill="#c99055" />
-        <path d="M37 64L209 27L235 175L64 204Z" fill="#f3d48a" />
-        <path d="M31 55L219 14" stroke="#7a5038" strokeWidth="16" strokeLinecap="round" />
-        <path d="M47 217L243 185" stroke="#7a5038" strokeWidth="16" strokeLinecap="round" />
-        <path d="M77 76C114 91 152 83 194 63" stroke="#a7794d" strokeWidth="6" strokeLinecap="round" opacity=".5" />
-        <path d="M82 130C119 145 168 135 206 115" stroke="#a7794d" strokeWidth="6" strokeLinecap="round" opacity=".5" />
-      </g>
-
-      <g transform="translate(735 292)">
-        <path d="M0 128C19 66 78 41 150 45C220 48 269 84 285 143C220 164 62 160 0 128Z" fill="#82a95f" />
-        <path d="M43 108C88 91 172 97 231 118" stroke="#9fc675" strokeWidth="19" strokeLinecap="round" opacity=".72" />
-      </g>
-
-      <g transform="translate(41 382)">
-        <path d="M0 93C18 39 71 13 131 23C188 32 222 68 235 115C173 140 58 134 0 93Z" fill="#7dad62" />
-        <path d="M43 84C83 67 144 70 190 96" stroke="#a0cb77" strokeWidth="18" strokeLinecap="round" opacity=".74" />
-      </g>
-
-      <g transform="translate(378 430)">
-        <ellipse cx="79" cy="52" rx="79" ry="35" fill="#8da77b" />
-        <ellipse cx="89" cy="40" rx="50" ry="21" fill="#a6bd91" />
-        <path d="M45 52C78 64 115 62 146 49" stroke="#697d58" strokeWidth="7" strokeLinecap="round" opacity=".42" />
-      </g>
-
-      <g transform="translate(548 455)">
-        <path d="M18 43H178V146C126 174 63 170 18 143Z" fill="#b5794d" />
-        <path d="M0 42H196L168 5H31Z" fill="#d39b62" />
-        <path d="M28 71H168" stroke="#7a5038" strokeWidth="8" strokeLinecap="round" />
-        <path d="M73 44V153" stroke="#7a5038" strokeWidth="7" strokeLinecap="round" opacity=".55" />
-        <path d="M126 44V153" stroke="#7a5038" strokeWidth="7" strokeLinecap="round" opacity=".55" />
-      </g>
-
-      <g transform="translate(79 543)">
-        <path d="M22 33C40 9 93 3 123 28C154 54 126 92 72 88C17 84 1 61 22 33Z" fill="#c7bda1" />
-        <path d="M55 31C74 23 99 29 111 44" stroke="#e2d7b8" strokeWidth="7" strokeLinecap="round" />
-      </g>
-    </svg>
   );
 }
 
@@ -773,31 +699,6 @@ function CollectionBookModal({
         </div>
       </div>
     </div>
-  );
-}
-
-function ForestSceneForeground() {
-  return (
-    <svg
-      className="forest-illustration forest-foreground"
-      viewBox="0 0 1000 720"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <g transform="translate(16 508)">
-        <path d="M0 132C40 58 122 26 218 42C299 55 354 99 372 163C283 194 79 191 0 132Z" fill="#7ead62" />
-        <path d="M65 117C122 91 226 96 300 127" stroke="#a0cb76" strokeWidth="18" strokeLinecap="round" opacity=".78" />
-        <path d="M105 54C123 13 176 0 213 35C181 58 142 64 105 54Z" fill="#aedb7f" />
-      </g>
-      <g transform="translate(651 515)">
-        <path d="M0 104C45 46 118 28 204 44C278 58 333 94 354 147C257 175 71 164 0 104Z" fill="#7da85f" />
-        <path d="M49 91C112 69 223 76 292 111" stroke="#9fc675" strokeWidth="18" strokeLinecap="round" opacity=".74" />
-      </g>
-      <g transform="translate(330 560)">
-        <path d="M0 75C31 26 87 3 156 16C220 27 263 58 281 106C207 129 64 123 0 75Z" fill="#8aad69" />
-      </g>
-      <path d="M0 663C122 621 273 632 423 662C583 694 726 696 1000 638V720H0Z" fill="#8dbc68" />
-    </svg>
   );
 }
 
@@ -910,50 +811,6 @@ function LightbulbIcon() {
       <path d="M12 2.5V1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <path d="M19.1 5.1L19.8 4.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <path d="M4.9 5.1L4.2 4.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function StarIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="reward-icon star-icon"
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M16 3.5L19.55 11.15L27.9 12.18L21.75 17.92L23.35 26.2L16 22.08L8.65 26.2L10.25 17.92L4.1 12.18L12.45 11.15L16 3.5Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function StickerIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="reward-icon sticker-icon"
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M7 5.5H22.5L27 10V26.5H7V5.5Z"
-        fill="currentColor"
-      />
-      <path
-        d="M22.5 5.5V10H27"
-        fill="rgba(255,255,255,0.46)"
-      />
-      <path
-        d="M12 15.5H21.5M12 20H19"
-        stroke="#fff8dc"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
     </svg>
   );
 }
@@ -1100,14 +957,6 @@ function ReplayIcon() {
         strokeLinecap="round"
       />
     </svg>
-  );
-}
-
-function FoxGuide({ mood }: { mood: "hello" | "search" | "happy" }) {
-  return (
-    <div className={`fox-guide fox-${mood}`} aria-hidden="true">
-      <img src={xiaohangFox} alt="" />
-    </div>
   );
 }
 

@@ -60,7 +60,7 @@ export const dialogue = {
     r("森林書", zhuyin.forestBook),
     "完成囉！",
   ],
-  completeSummary: (stages: number): RubySegment[] => [
+  completeSummary: (): RubySegment[] => [
     "我們把",
     r("零件", "ㄌㄧㄥˊ ㄐㄧㄢˋ"),
     "帶回",
