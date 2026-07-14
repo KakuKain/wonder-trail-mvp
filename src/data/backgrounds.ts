@@ -1,8 +1,8 @@
-import forestSearch01 from "../assets/backgrounds/forest-search-01.png";
-import forestSearch02 from "../assets/backgrounds/forest-search-02.png";
-import forestSearch03 from "../assets/backgrounds/forest-search-03.png";
-import forestSearch04 from "../assets/backgrounds/forest-search-04.png";
-import forestSearch05 from "../assets/backgrounds/forest-search-05.png";
+import forestSearch01 from "../assets/backgrounds/forest-search-01.webp";
+import forestSearch02 from "../assets/backgrounds/forest-search-02.webp";
+import forestSearch03 from "../assets/backgrounds/forest-search-03.webp";
+import forestSearch04 from "../assets/backgrounds/forest-search-04.webp";
+import forestSearch05 from "../assets/backgrounds/forest-search-05.webp";
 
 export type StageBackground = {
   image: string;

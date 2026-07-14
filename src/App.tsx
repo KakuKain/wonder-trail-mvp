@@ -11,15 +11,15 @@ import { appendEvent, loadEvents, loadSave, resetSave, writeSave } from "./lib/s
 import { createPlacedObjects } from "./lib/stagePlacement";
 import { VoiceQueue } from "./lib/voiceEngine";
 import type { AssetDefinition, GameEvent, PlacedObject, RubySegment, SaveData, StageConfig } from "./types";
-import classroomHotspot from "./assets/maps/hotspots/classroom.png";
-import forestShrineHotspot from "./assets/maps/hotspots/forest-shrine.png";
-import marketHotspot from "./assets/maps/hotspots/market.png";
-import planeHotspot from "./assets/maps/hotspots/plane.png";
-import schoolHotspot from "./assets/maps/hotspots/school.png";
-import homeSeaMap from "./assets/maps/parts-island-square-ocean-v2.png";
-import collectionRewardClean from "./assets/reward/collection-reward-clean.png";
-import planePartReward from "./assets/reward/plane-part.png";
-import xiaohangFox from "./assets/xiaohang-fox.png";
+import classroomHotspot from "./assets/maps/hotspots/classroom.webp";
+import forestShrineHotspot from "./assets/maps/hotspots/forest-shrine.webp";
+import marketHotspot from "./assets/maps/hotspots/market.webp";
+import planeHotspot from "./assets/maps/hotspots/plane.webp";
+import schoolHotspot from "./assets/maps/hotspots/school.webp";
+import homeSeaMap from "./assets/maps/parts-island-square-ocean-v2.webp";
+import collectionRewardClean from "./assets/reward/collection-reward-clean.webp";
+import planePartReward from "./assets/reward/plane-part.webp";
+import xiaohangFox from "./assets/xiaohang-fox.webp";
 
 type Screen = "intro" | "stage" | "reward" | "complete";
 

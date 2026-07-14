@@ -1,14 +1,14 @@
-import acorn from "../assets/objects/acorn.png";
-import apple from "../assets/objects/apple.png";
-import bee from "../assets/objects/bee.png";
-import blueButterfly from "../assets/objects/blue_butterfly.png";
-import foxFootprint from "../assets/objects/fox_footprint_single.png";
-import leaf from "../assets/objects/leaf.png";
-import mushroom from "../assets/objects/mushroom.png";
-import pinkFlower from "../assets/objects/pink_flower.png";
-import pineCone from "../assets/objects/pine_cone.png";
-import redButterfly from "../assets/objects/red_butterfly.png";
-import treasureBox from "../assets/objects/treasure_box.png";
+import acorn from "../assets/objects/acorn.webp";
+import apple from "../assets/objects/apple.webp";
+import bee from "../assets/objects/bee.webp";
+import blueButterfly from "../assets/objects/blue_butterfly.webp";
+import foxFootprint from "../assets/objects/fox_footprint_single.webp";
+import leaf from "../assets/objects/leaf.webp";
+import mushroom from "../assets/objects/mushroom.webp";
+import pinkFlower from "../assets/objects/pink_flower.webp";
+import pineCone from "../assets/objects/pine_cone.webp";
+import redButterfly from "../assets/objects/red_butterfly.webp";
+import treasureBox from "../assets/objects/treasure_box.webp";
 
 export const assetImages: Record<string, string> = {
   acorn,

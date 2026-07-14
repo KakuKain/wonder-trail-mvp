@@ -12,14 +12,14 @@
 
 @font-face {
   font-family: "BpmfGenSenRounded";
-  src: url("./assets/BpmfGenSenRounded-R.ttf") format("truetype");
+  src: url("./assets/BpmfGenSenRounded-R-subset.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 
 @font-face {
   font-family: "BpmfGenSenRounded";
-  src: url("./assets/BpmfGenSenRounded-B.ttf") format("truetype");
+  src: url("./assets/BpmfGenSenRounded-B-subset.woff2") format("woff2");
   font-weight: 900;
   font-display: swap;
 }
