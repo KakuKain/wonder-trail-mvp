@@ -48,10 +48,32 @@ export type ZhuyinPuzzleConfig = {
   choices: string[];
 };
 
+export type MarketOrderLine = {
+  assetId: string;
+  count: number;
+};
+
+export type MarketChallengeConfig = {
+  id: string;
+  mode: "pick" | "pay" | "change";
+  customerName: string;
+  customerRuby: string;
+  requestText: string;
+  requestRuby: RubySegment[];
+  order: MarketOrderLine[];
+  prices: Record<string, number>;
+  paymentGiven?: number;
+};
+
+export type MarketPuzzleConfig = {
+  coinValues: number[];
+  challenges: MarketChallengeConfig[];
+};
+
 export type StageConfig = {
   id: string;
-  world: "forest";
-  mechanic: "search" | "zhuyin";
+  world: "forest" | "market";
+  mechanic: "search" | "market" | "zhuyin";
   difficulty: number;
   storyText: string;
   instructionText: string;
@@ -62,6 +84,7 @@ export type StageConfig = {
   targets?: StageObjectConfig[];
   distractors?: StageObjectConfig[];
   zhuyinPuzzle?: ZhuyinPuzzleConfig;
+  marketPuzzle?: MarketPuzzleConfig;
   assist: AssistConfig;
   reward: RewardConfig;
 };

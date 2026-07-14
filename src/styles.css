@@ -1081,6 +1081,378 @@ p {
   pointer-events: none;
 }
 
+.market-stage-layout .story-panel {
+  bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+.market-stage {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: max(86px, calc(env(safe-area-inset-top) + 72px)) 16px 230px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 244, 187, 0.5), transparent 24%),
+    linear-gradient(180deg, #91d2dc 0 23%, #edd392 23% 24%, #b98458 24% 100%);
+}
+
+.market-stage::before {
+  position: absolute;
+  inset: 24% 0 0;
+  z-index: 0;
+  content: "";
+  background:
+    linear-gradient(90deg, rgba(100, 61, 32, 0.18) 1px, transparent 1px) 0 0 / 46px 100%,
+    linear-gradient(180deg, rgba(255, 235, 174, 0.42), rgba(107, 61, 38, 0.14)),
+    #b77a4f;
+  clip-path: polygon(0 9%, 100% 0, 100% 100%, 0 100%);
+}
+
+.market-sky {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: 32%;
+  background:
+    radial-gradient(circle at 78% 26%, rgba(255, 255, 255, 0.82) 0 7%, transparent 8%),
+    radial-gradient(circle at 85% 28%, rgba(255, 255, 255, 0.58) 0 9%, transparent 10%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent);
+  pointer-events: none;
+}
+
+.market-toolbar {
+  z-index: 14;
+}
+
+.market-progress-pill {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 18px;
+  border: 3px solid #6b4634;
+  border-radius: 999px;
+  background: rgba(255, 246, 211, 0.92);
+  color: #4b3025;
+  box-shadow:
+    0 4px 0 rgba(75, 48, 31, 0.14),
+    0 10px 18px rgba(39, 59, 35, 0.12);
+}
+
+.market-progress-pill span {
+  color: #7a5b41;
+  font-size: 0.875rem;
+  font-weight: var(--child-font-bold);
+}
+
+.market-progress-pill strong {
+  font-family: var(--ui-number-font);
+  font-size: 1.3rem;
+}
+
+.market-customer-card {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  width: min(660px, 100%);
+  margin: 0 auto 14px;
+  padding: 12px 14px;
+  border: 4px solid #6b4634;
+  border-radius: 18px 18px 10px 10px;
+  background: rgba(255, 247, 215, 0.94);
+  box-shadow:
+    inset 0 -4px 0 rgba(124, 78, 42, 0.12),
+    0 8px 0 rgba(75, 48, 31, 0.16);
+}
+
+.market-customer-avatar {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 3px solid #8f6137;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 25%, #fff7d6, #f3bd77);
+  color: #6b3d21;
+  font-weight: var(--child-font-bold);
+  box-shadow: inset 0 -4px 0 rgba(105, 60, 30, 0.12);
+}
+
+.market-customer-card h2 {
+  margin: 2px 0 0;
+  color: #3f2f26;
+  font-size: clamp(1.2rem, 4.2vw, 1.72rem);
+  line-height: 1.25;
+}
+
+.market-stall {
+  position: relative;
+  z-index: 2;
+  width: min(660px, 100%);
+  margin: 0 auto 12px;
+  padding: 28px 14px 16px;
+  border: 4px solid #6b4634;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 241, 194, 0.88), rgba(235, 188, 112, 0.92));
+  box-shadow:
+    inset 0 -5px 0 rgba(116, 70, 35, 0.18),
+    0 8px 0 rgba(75, 48, 31, 0.18);
+}
+
+.market-awning {
+  position: absolute;
+  top: -5px;
+  right: 12px;
+  left: 12px;
+  height: 32px;
+  border: 3px solid #6b4634;
+  border-radius: 12px 12px 8px 8px;
+  background:
+    repeating-linear-gradient(90deg, #f9df91 0 28px, #df7d50 28px 56px);
+  box-shadow: 0 5px 0 rgba(75, 48, 31, 0.12);
+}
+
+.market-shelves {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.market-item-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 9px 5px 8px;
+  border: 3px solid rgba(107, 70, 52, 0.36);
+  border-radius: 12px;
+  background: rgba(255, 250, 228, 0.88);
+  color: #463328;
+  box-shadow:
+    inset 0 -4px 0 rgba(126, 80, 41, 0.08),
+    0 4px 0 rgba(75, 48, 31, 0.08);
+  cursor: pointer;
+}
+
+.market-item-card:disabled {
+  cursor: default;
+}
+
+.market-item-card.wanted {
+  border-color: rgba(98, 133, 67, 0.76);
+  background: rgba(255, 252, 222, 0.96);
+}
+
+.market-item-card.done {
+  filter: saturate(0.92);
+  background: rgba(221, 241, 201, 0.94);
+}
+
+.market-item-card .object-icon {
+  width: 42px;
+  height: 42px;
+}
+
+.market-item-card span {
+  min-width: 0;
+  color: #44312a;
+  font-size: 0.92rem;
+  font-weight: var(--child-font-bold);
+  line-height: 1.1;
+  text-align: center;
+}
+
+.market-item-card small {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffdf74;
+  color: #694021;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.market-item-card b {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #6b4634;
+  color: #fff8dc;
+  font-family: var(--ui-number-font);
+  font-size: 0.82rem;
+}
+
+.market-register {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 0.86fr;
+  gap: 10px;
+  width: min(660px, 100%);
+  margin: 0 auto;
+}
+
+.market-basket,
+.market-total-card,
+.market-coin-tray {
+  border: 3px solid rgba(107, 70, 52, 0.54);
+  border-radius: 14px;
+  background: rgba(255, 246, 216, 0.92);
+  box-shadow:
+    inset 0 -4px 0 rgba(126, 80, 41, 0.1),
+    0 5px 0 rgba(75, 48, 31, 0.08);
+}
+
+.market-basket {
+  padding: 10px;
+}
+
+.market-basket p,
+.market-coin-tray p {
+  margin: 0 0 6px;
+  color: #6b4c38;
+  font-weight: var(--child-font-bold);
+}
+
+.market-basket-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.market-basket-items span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 2px dashed rgba(107, 70, 52, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.52);
+  color: #6f5845;
+  font-family: var(--ui-number-font);
+  font-weight: 800;
+}
+
+.market-basket-items span.ready {
+  border-style: solid;
+  color: #315f3d;
+  background: rgba(221, 241, 201, 0.92);
+}
+
+.market-total-card {
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  padding: 8px;
+  text-align: center;
+}
+
+.market-total-card span,
+.market-total-card small {
+  color: #75533c;
+  font-weight: var(--child-font-bold);
+}
+
+.market-total-card strong {
+  color: #4b3025;
+  font-family: var(--ui-number-font);
+  font-size: clamp(2rem, 9vw, 3.4rem);
+  line-height: 0.9;
+}
+
+.market-coin-tray {
+  grid-column: 1 / -1;
+  padding: 10px;
+}
+
+.market-coins {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.shell-coin,
+.coin-clear-button {
+  min-height: 50px;
+  border: 3px solid #8a6131;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 28%, #fff9de, #f3cf62);
+  color: #6b3d21;
+  font-family: var(--ui-number-font);
+  font-size: 1.45rem;
+  font-weight: 900;
+  box-shadow:
+    inset 0 -4px 0 rgba(116, 72, 32, 0.12),
+    0 4px 0 rgba(75, 48, 31, 0.12);
+}
+
+.shell-coin:disabled,
+.coin-clear-button:disabled {
+  opacity: 0.42;
+}
+
+.coin-clear-button {
+  border-radius: 14px;
+  background: rgba(255, 247, 220, 0.92);
+  font-family: var(--child-font);
+  font-size: 1rem;
+}
+
+.coin-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 34px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.coin-stack span {
+  color: rgba(107, 70, 52, 0.58);
+  font-size: 0.95rem;
+}
+
+.coin-stack i {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #a37736;
+  border-radius: 50%;
+  background: #ffe38b;
+  color: #6b3d21;
+  font-family: var(--ui-number-font);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.market-feedback {
+  position: relative;
+  z-index: 2;
+  width: min(660px, 100%);
+  min-height: 36px;
+  margin: 10px auto 0;
+  padding: 8px 12px;
+  border: 2px solid rgba(107, 70, 52, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 248, 220, 0.76);
+  color: #4f6b42;
+  font-size: 1rem;
+  font-weight: var(--child-font-bold);
+  text-align: center;
+}
+
 .forest-backdrop {
   z-index: 0;
 }
