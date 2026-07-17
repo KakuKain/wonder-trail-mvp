@@ -7,6 +7,12 @@ export const defaultSave: SaveData = {
   completedStageIds: [],
   stars: 0,
   stickers: [],
+  marketProgress: {
+    completedChallengeIds: [],
+    completedDifficulties: [],
+    activeDifficulty: "beginner",
+    nextChallengeByDifficulty: {},
+  },
 };
 
 export function loadSave(): SaveData {
@@ -14,7 +20,26 @@ export function loadSave(): SaveData {
   if (!raw) return defaultSave;
 
   try {
-    return { ...defaultSave, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw) as Partial<SaveData>;
+    const marketProgress = parsed.marketProgress;
+
+    return {
+      ...defaultSave,
+      ...parsed,
+      completedStageIds: Array.isArray(parsed.completedStageIds) ? parsed.completedStageIds : [],
+      stickers: Array.isArray(parsed.stickers) ? parsed.stickers : [],
+      marketProgress: {
+        ...defaultSave.marketProgress,
+        ...marketProgress,
+        completedChallengeIds: Array.isArray(marketProgress?.completedChallengeIds)
+          ? marketProgress.completedChallengeIds
+          : [],
+        completedDifficulties: Array.isArray(marketProgress?.completedDifficulties)
+          ? marketProgress.completedDifficulties
+          : [],
+        nextChallengeByDifficulty: marketProgress?.nextChallengeByDifficulty ?? {},
+      },
+    };
   } catch {
     return defaultSave;
   }

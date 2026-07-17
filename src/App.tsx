@@ -14,6 +14,9 @@ import type {
   AssetDefinition,
   GameEvent,
   MarketChallengeConfig,
+  MarketDifficultyConfig,
+  MarketDifficultyId,
+  MarketQuestionMode,
   PlacedObject,
   RubySegment,
   SaveData,
@@ -25,14 +28,33 @@ import marketHotspot from "./assets/maps/hotspots/market.webp";
 import planeHotspot from "./assets/maps/hotspots/plane.webp";
 import schoolHotspot from "./assets/maps/hotspots/school.webp";
 import homeSeaMap from "./assets/maps/parts-island-square-ocean-v2.webp";
+import marketBasketArt from "./assets/market/market-basket-v1.webp";
+import marketPriceTagArt from "./assets/market/market-price-tag-v1.png";
+import marketSignArt from "./assets/market/market-sign-v1.webp";
+import marketStallBackground from "./assets/market/market-stall-empty-wide-v6.webp";
 import collectionRewardClean from "./assets/reward/collection-reward-clean.webp";
 import planePartReward from "./assets/reward/plane-part.webp";
 import xiaohangFox from "./assets/xiaohang-fox.webp";
 
 type Screen = "intro" | "stage" | "reward" | "complete";
-type MarketPhase = "pick" | "pay" | "change";
+type MarketPhase = "pick" | "total";
 
 const sessionId = `session-${Date.now()}`;
+const marketItemPrices: Record<string, number> = {
+  apple: 2,
+  pine_cone: 2,
+  pink_flower: 3,
+  mushroom: 3,
+  acorn: 3,
+};
+const marketShelfItemIds = ["apple", "pine_cone", "pink_flower", "mushroom", "acorn"];
+const marketShelfPositions: Record<string, { x: number; y: number; rotation: number }> = {
+  apple: { x: 24, y: 57.6, rotation: -3 },
+  pine_cone: { x: 50, y: 57.6, rotation: 2 },
+  pink_flower: { x: 76, y: 57.6, rotation: -1 },
+  mushroom: { x: 36.5, y: 68.7, rotation: 3 },
+  acorn: { x: 63.5, y: 68.7, rotation: -2 },
+};
 const chapters = [
   {
     id: "search",
@@ -107,9 +129,20 @@ function firstStageIndexForWorld(world: StageConfig["world"], save: SaveData) {
 
 function marketTotal(challenge: MarketChallengeConfig) {
   return challenge.order.reduce(
-    (sum, item) => sum + (challenge.prices[item.assetId] ?? 0) * item.count,
+    (sum, item) => sum + marketPrice(challenge, item.assetId) * item.count,
     0
   );
+}
+
+function marketQuestionValue(challenge: MarketChallengeConfig, mode: MarketQuestionMode) {
+  if (mode === "number-recognition") {
+    return challenge.order.reduce((sum, item) => sum + item.count, 0);
+  }
+  return marketTotal(challenge);
+}
+
+function marketPrice(challenge: MarketChallengeConfig, assetId: string) {
+  return challenge.prices[assetId] ?? marketItemPrices[assetId] ?? 0;
 }
 
 function marketBasketMatches(challenge: MarketChallengeConfig, basket: Record<string, number>) {
@@ -120,15 +153,44 @@ function marketRequiredCount(challenge: MarketChallengeConfig, assetId: string) 
   return challenge.order.find((item) => item.assetId === assetId)?.count ?? 0;
 }
 
-function coinTotal(coins: number[]) {
-  return coins.reduce((sum, coin) => sum + coin, 0);
+function marketAnswerOptions(total: number, challengeId: string) {
+  const candidates = Array.from(
+    new Set([total - 1, total, total + 1, total + 2].filter((value) => value > 0))
+  ).slice(0, 3);
+  let seed = Array.from(challengeId).reduce(
+    (hash, character) => Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0,
+    2166136261
+  );
+
+  for (let index = candidates.length - 1; index > 0; index -= 1) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const swapIndex = seed % (index + 1);
+    [candidates[index], candidates[swapIndex]] = [candidates[swapIndex], candidates[index]];
+  }
+
+  return candidates;
+}
+
+function isMarketDifficultyUnlocked(
+  difficulty: MarketDifficultyConfig,
+  completedDifficulties: MarketDifficultyId[]
+) {
+  return !difficulty.unlockAfter || completedDifficulties.includes(difficulty.unlockAfter);
+}
+
+function marketCalculationLines(challenge: MarketChallengeConfig) {
+  return challenge.order.flatMap((item) =>
+    Array.from({ length: item.count }, (_, index) => ({
+      key: `${item.assetId}-${index}`,
+      assetId: item.assetId,
+      price: marketPrice(challenge, item.assetId),
+    }))
+  );
 }
 
 export function App() {
   const [save, setSave] = useState<SaveData>(() => loadSave());
-  const [screen, setScreen] = useState<Screen>(() =>
-    loadSave().completedStageIds.length >= stages.length ? "complete" : "intro"
-  );
+  const [screen, setScreen] = useState<Screen>("intro");
   const [stageIndex, setStageIndex] = useState(() => nextStageIndex(loadSave()));
   const [objects, setObjects] = useState<PlacedObject[]>(() =>
     createPlacedObjects(stages[nextStageIndex(loadSave())])
@@ -146,20 +208,39 @@ export function App() {
   const [stageBackgroundIndex, setStageBackgroundIndex] = useState(() =>
     Math.floor(Math.random() * forestBackgrounds.length)
   );
-  const [marketChallengeIndex, setMarketChallengeIndex] = useState(0);
+  const [marketDifficulty, setMarketDifficulty] = useState<MarketDifficultyId>(
+    save.marketProgress.activeDifficulty
+  );
+  const [marketCompletedDifficulties, setMarketCompletedDifficulties] = useState<MarketDifficultyId[]>(
+    save.marketProgress.completedDifficulties
+  );
+  const [marketChallengeIndex, setMarketChallengeIndex] = useState(
+    save.marketProgress.nextChallengeByDifficulty[save.marketProgress.activeDifficulty] ?? 0
+  );
   const [marketPhase, setMarketPhase] = useState<MarketPhase>("pick");
   const [marketBasket, setMarketBasket] = useState<Record<string, number>>({});
-  const [marketCoins, setMarketCoins] = useState<number[]>([]);
+  const [marketSelectedTotal, setMarketSelectedTotal] = useState<number | null>(null);
   const [marketFeedback, setMarketFeedback] = useState("");
   const stageStartedAt = useRef(Date.now());
+  const marketHintTimer = useRef<number | null>(null);
   const voiceQueue = useRef(new VoiceQueue());
 
   const stage = stages[stageIndex];
   const stageBackground = forestBackgrounds[stageBackgroundIndex % forestBackgrounds.length];
   const foundTargets = objects.filter((object) => object.isTarget && object.found).length;
   const totalTargets = objects.filter((object) => object.isTarget).length;
-  const progress = Math.round((save.completedStageIds.length / stages.length) * 100);
-  const hasProgress = save.completedStageIds.length > 0;
+  const completedStageCount = stages.filter((candidate) =>
+    save.completedStageIds.includes(candidate.id)
+  ).length;
+  const progress = Math.round((completedStageCount / stages.length) * 100);
+  const forestPartAcquired = stages
+    .filter((candidate) => candidate.world === "forest")
+    .every((candidate) => save.completedStageIds.includes(candidate.id));
+  const marketPartAcquired = save.completedStageIds.some((stageId) =>
+    stages.some((candidate) => candidate.id === stageId && candidate.world === "market")
+  ) || save.marketProgress.completedDifficulties.includes("advanced");
+  const hasProgress = save.completedStageIds.length > 0
+    || save.marketProgress.completedChallengeIds.length > 0;
 
   const stickerAssets = useMemo(
     () => save.stickers.map((stickerId) => assets[stickerId]).filter(Boolean),
@@ -180,25 +261,36 @@ export function App() {
     [voices]
   );
   const marketPuzzle = stage.marketPuzzle;
-  const marketChallenge = marketPuzzle?.challenges[marketChallengeIndex];
-  const currentMarketTotal = marketChallenge ? marketTotal(marketChallenge) : 0;
-  const currentMarketCoinTotal = coinTotal(marketCoins);
-  const currentMarketChange = marketChallenge?.paymentGiven
-    ? marketChallenge.paymentGiven - currentMarketTotal
+  const marketDifficulties = marketPuzzle?.difficulties ?? [];
+  const marketDifficultyChallenges = useMemo(
+    () => marketPuzzle?.challenges.filter((challenge) => challenge.difficulty === marketDifficulty) ?? [],
+    [marketDifficulty, marketPuzzle]
+  );
+  const activeMarketDifficulty = marketDifficulties.find(
+    (difficulty) => difficulty.id === marketDifficulty
+  );
+  const marketChallenge = marketDifficultyChallenges[marketChallengeIndex];
+  const currentMarketQuestionValue = marketChallenge && activeMarketDifficulty
+    ? marketQuestionValue(marketChallenge, activeMarketDifficulty.questionMode)
     : 0;
+  const currentMarketAnswerOptions = useMemo(
+    () => marketAnswerOptions(currentMarketQuestionValue, marketChallenge?.id ?? "market"),
+    [currentMarketQuestionValue, marketChallenge?.id]
+  );
   const currentHintText = useMemo(() => {
     if (stage.mechanic === "market" && marketChallenge) {
       if (marketPhase === "pick") return marketChallenge.requestText;
-      if (marketPhase === "change") return `要找 ${currentMarketChange} 枚貝殼幣。`;
-      return `要收 ${currentMarketTotal} 枚貝殼幣。`;
+      if (activeMarketDifficulty?.questionMode === "number-recognition") {
+        return "數一數，籃子裡有幾個商品。";
+      }
+      return "看價格牌，把商品價錢加起來。";
     }
 
     return stage.instructionText;
   }, [
-    currentMarketChange,
-    currentMarketTotal,
     marketChallenge,
     marketPhase,
+    activeMarketDifficulty?.questionMode,
     stage.instructionText,
     stage.mechanic,
   ]);
@@ -223,6 +315,19 @@ export function App() {
   function beginStage(index = stageIndex) {
     const nextStage = stages[index];
     const nextBackgroundIndex = Math.floor(Math.random() * forestBackgrounds.length);
+    const savedMarketProgress = save.marketProgress;
+    const savedMarketDifficulty = nextStage.marketPuzzle?.difficulties.find(
+      (difficulty) => difficulty.id === savedMarketProgress.activeDifficulty
+        && isMarketDifficultyUnlocked(difficulty, savedMarketProgress.completedDifficulties)
+    )?.id ?? nextStage.marketPuzzle?.difficulties[0]?.id ?? "beginner";
+    const savedMarketChallenges = nextStage.marketPuzzle?.challenges.filter(
+      (challenge) => challenge.difficulty === savedMarketDifficulty
+    ) ?? [];
+    const savedMarketChallengeIndex = Math.min(
+      savedMarketProgress.nextChallengeByDifficulty[savedMarketDifficulty] ?? 0,
+      Math.max(0, savedMarketChallenges.length - 1)
+    );
+
     setStageIndex(index);
     setStageBackgroundReady(nextStage.mechanic !== "search");
     setStageBackgroundIndex(nextBackgroundIndex);
@@ -231,10 +336,12 @@ export function App() {
     setHintsUsed(0);
     setHintVisible(false);
     setReward(null);
-    setMarketChallengeIndex(0);
+    setMarketDifficulty(savedMarketDifficulty);
+    setMarketCompletedDifficulties(savedMarketProgress.completedDifficulties);
+    setMarketChallengeIndex(savedMarketChallengeIndex);
     setMarketPhase("pick");
     setMarketBasket({});
-    setMarketCoins([]);
+    setMarketSelectedTotal(null);
     setMarketFeedback("");
     setScreen("stage");
     stageStartedAt.current = Date.now();
@@ -250,17 +357,19 @@ export function App() {
     beginStage(firstStageIndexForWorld("market", save));
   }
 
-  function completeStage(nextObjects: PlacedObject[]) {
+  function completeStage(nextObjects: PlacedObject[], sourceSave = save) {
     const durationMs = Date.now() - stageStartedAt.current;
     const nextReward = stage.reward;
-    const completedStageIds = save.completedStageIds.includes(stage.id)
-      ? save.completedStageIds
-      : [...save.completedStageIds, stage.id];
-    const stickers = Array.from(new Set([...save.stickers, ...nextReward.stickers]));
+    const wasAlreadyCompleted = sourceSave.completedStageIds.includes(stage.id);
+    const completedStageIds = wasAlreadyCompleted
+      ? sourceSave.completedStageIds
+      : [...sourceSave.completedStageIds, stage.id];
+    const stickers = Array.from(new Set([...sourceSave.stickers, ...nextReward.stickers]));
     const nextSave: SaveData = {
+      ...sourceSave,
       completedStageIds,
       stickers,
-      stars: save.stars + nextReward.stars,
+      stars: sourceSave.stars + (wasAlreadyCompleted ? 0 : nextReward.stars),
       lastPlayedAt: new Date().toISOString(),
     };
 
@@ -273,7 +382,9 @@ export function App() {
       tone: "positive",
       interrupt: true,
     });
-    voiceQueue.current.speak("小航把寶物收進森林書。", {
+    voiceQueue.current.speak(stage.mechanic === "market"
+      ? "小航取得了市場的零件。"
+      : "小航把寶物收進森林書。", {
       tone: "neutral",
       delayMs: 500,
     });
@@ -323,28 +434,106 @@ export function App() {
     }
   }
 
-  function resetMarketRound(nextIndex: number) {
+  function resetMarketRound(nextIndex: number, nextDifficulty = marketDifficulty) {
+    if (marketHintTimer.current !== null) {
+      window.clearTimeout(marketHintTimer.current);
+      marketHintTimer.current = null;
+    }
+    setMarketDifficulty(nextDifficulty);
     setMarketChallengeIndex(nextIndex);
     setMarketPhase("pick");
     setMarketBasket({});
-    setMarketCoins([]);
+    setMarketSelectedTotal(null);
     setMarketFeedback("");
+    setHintVisible(false);
+  }
+
+  function persistMarketProgress(progressState: SaveData["marketProgress"]) {
+    const nextSave: SaveData = {
+      ...save,
+      marketProgress: progressState,
+      lastPlayedAt: new Date().toISOString(),
+    };
+
+    setSave(nextSave);
+    writeSave(nextSave);
+    return nextSave;
+  }
+
+  function handleMarketDifficultySelect(nextDifficulty: MarketDifficultyId) {
+    const difficulty = marketDifficulties.find((item) => item.id === nextDifficulty);
+    if (!difficulty) return;
+
+    if (!isMarketDifficultyUnlocked(difficulty, marketCompletedDifficulties)) {
+      voiceQueue.current.speak(`${difficulty.label}還沒開放喔。`, {
+        tone: "soft",
+        interrupt: true,
+      });
+      return;
+    }
+
+    const nextIndex = save.marketProgress.nextChallengeByDifficulty[nextDifficulty] ?? 0;
+    const nextProgress = {
+      ...save.marketProgress,
+      activeDifficulty: nextDifficulty,
+    };
+
+    persistMarketProgress(nextProgress);
+    resetMarketRound(nextIndex, nextDifficulty);
+    voiceQueue.current.speak(`${difficulty.label}開始。`, {
+      tone: "neutral",
+      interrupt: true,
+    });
   }
 
   function finishMarketChallenge() {
     if (!marketPuzzle || !marketChallenge) return;
 
-    if (marketChallengeIndex >= marketPuzzle.challenges.length - 1) {
-      setMarketFeedback("市場阿姨把零件交給小航！");
-      voiceQueue.current.speak("太好了，市場的工作完成囉！", {
+    const completedChallengeIds = Array.from(new Set([
+      ...save.marketProgress.completedChallengeIds,
+      marketChallenge.id,
+    ]));
+    const nextChallengeByDifficulty = {
+      ...save.marketProgress.nextChallengeByDifficulty,
+    };
+
+    if (marketChallengeIndex >= marketDifficultyChallenges.length - 1) {
+      const nextCompletedDifficulties = Array.from(
+        new Set([...save.marketProgress.completedDifficulties, marketDifficulty])
+      );
+      nextChallengeByDifficulty[marketDifficulty] = 0;
+
+      setMarketCompletedDifficulties(nextCompletedDifficulties);
+      const nextProgress = {
+        completedChallengeIds,
+        completedDifficulties: nextCompletedDifficulties,
+        activeDifficulty: marketDifficulty,
+        nextChallengeByDifficulty,
+      };
+      const nextSave = {
+        ...save,
+        marketProgress: nextProgress,
+        lastPlayedAt: new Date().toISOString(),
+      };
+      const difficultyLabel = activeMarketDifficulty?.label ?? "這個難度";
+
+      setMarketFeedback(`${difficultyLabel}完成，市場阿姨把零件交給小航！`);
+      voiceQueue.current.speak(`${difficultyLabel}完成，取得市場的零件了！`, {
         tone: "positive",
         interrupt: true,
       });
-      completeStage(objects);
+      completeStage(objects, nextSave);
       return;
     }
 
     const nextIndex = marketChallengeIndex + 1;
+    nextChallengeByDifficulty[marketDifficulty] = nextIndex;
+    persistMarketProgress({
+      completedChallengeIds,
+      completedDifficulties: save.marketProgress.completedDifficulties,
+      activeDifficulty: marketDifficulty,
+      nextChallengeByDifficulty,
+    });
     resetMarketRound(nextIndex);
     voiceQueue.current.speak("完成一位客人囉，下一位來了。", {
       tone: "positive",
@@ -390,64 +579,61 @@ export function App() {
       return;
     }
 
-    if (marketChallenge.mode === "pick") {
-      setMarketFeedback("商品都放好囉！");
-      window.setTimeout(finishMarketChallenge, 450);
-      return;
-    }
-
-    const nextPhase = marketChallenge.mode === "change" ? "change" : "pay";
-    setMarketPhase(nextPhase);
-    setMarketCoins([]);
-    setMarketFeedback(
-      nextPhase === "change"
-        ? `總共 ${currentMarketTotal}，客人給 ${marketChallenge.paymentGiven}，找 ${currentMarketChange} 枚貝殼幣。`
-        : `總共 ${currentMarketTotal} 枚貝殼幣，幫小航收錢。`
-    );
-    voiceQueue.current.speak(
-      nextPhase === "change"
-        ? `找 ${currentMarketChange} 枚貝殼幣給客人。`
-        : `請收 ${currentMarketTotal} 枚貝殼幣。`,
-      { tone: "neutral", interrupt: true }
-    );
+    setMarketPhase("total");
+    setMarketSelectedTotal(null);
+    const isNumberRecognition = activeMarketDifficulty?.questionMode === "number-recognition";
+    const nextPrompt = isNumberRecognition
+      ? "數一數，籃子裡有幾個商品？"
+      : "算算看，這些商品總共幾貝？";
+    setMarketFeedback(nextPrompt);
+    voiceQueue.current.speak(nextPrompt, {
+      tone: "neutral",
+      interrupt: true,
+    });
   }
 
-  function handleMarketCoinClick(value: number) {
-    if (!marketChallenge || (marketPhase !== "pay" && marketPhase !== "change")) return;
+  function handleMarketTotalAnswer(value: number) {
+    if (!marketChallenge || marketPhase !== "total") return;
 
-    const target = marketPhase === "change" ? currentMarketChange : currentMarketTotal;
-    const nextTotal = currentMarketCoinTotal + value;
+    setMarketSelectedTotal(value);
 
-    if (nextTotal > target) {
-      setMarketFeedback("好像多了一點，重新數看看。");
-      setMarketCoins([]);
-      voiceQueue.current.speak("好像多了一點，我們重新數看看。", {
+    if (value !== currentMarketQuestionValue) {
+      const isNumberRecognition = activeMarketDifficulty?.questionMode === "number-recognition";
+      const retryText = isNumberRecognition
+        ? "再數一次籃子裡的商品。"
+        : "再看一次價格牌，重新算算看。";
+      setMarketFeedback(retryText);
+      setWrongClicks((count) => count + 1);
+      logEvent("wrong_click", stage.id, {
+        selectedTotal: value,
+        correctTotal: currentMarketQuestionValue,
+        mode: "market_total",
+      });
+      voiceQueue.current.speak(`差一點點，${retryText}`, {
         tone: "soft",
         interrupt: true,
       });
       return;
     }
 
-    setMarketCoins([...marketCoins, value]);
-
-    if (nextTotal < target) {
-      setMarketFeedback(`現在是 ${nextTotal}，還差 ${target - nextTotal} 枚。`);
-      voiceQueue.current.speak("好，繼續。", { tone: "positive", interrupt: true });
-      return;
-    }
-
-    setMarketFeedback(marketPhase === "change" ? "找零剛剛好！" : "收錢剛剛好！");
+    setMarketFeedback("算對了，結帳完成！");
+    voiceQueue.current.speak("算對了，結帳完成！", {
+      tone: "positive",
+      interrupt: true,
+    });
     window.setTimeout(finishMarketChallenge, 550);
-  }
-
-  function clearMarketCoins() {
-    setMarketCoins([]);
-    setMarketFeedback("貝殼幣重新數一次。");
   }
 
   function showHint() {
     if (stage.mechanic === "market" && marketChallenge) {
+      if (marketHintTimer.current !== null) {
+        window.clearTimeout(marketHintTimer.current);
+      }
       setHintVisible(true);
+      marketHintTimer.current = window.setTimeout(() => {
+        setHintVisible(false);
+        marketHintTimer.current = null;
+      }, 1800);
       setHintsUsed((value) => value + 1);
       voiceQueue.current.speak(`${voiceScripts.hintPrefix}${currentHintText}`, {
         tone: "neutral",
@@ -468,6 +654,21 @@ export function App() {
 
   function continueAdventure() {
     const nextIndex = stageIndex + 1;
+    const nextStage = stages[nextIndex];
+
+    if (stage.world === "forest" && nextStage?.world !== "forest") {
+      setScreen("complete");
+      voiceQueue.current.speak("森林的任務完成，取得飛機零件 A！", {
+        tone: "positive",
+        interrupt: true,
+      });
+      logEvent("chapter_complete", stage.id, {
+        world: stage.world,
+        part: "A",
+      });
+      return;
+    }
+
     if (nextIndex >= stages.length) {
       setScreen("complete");
       logEvent("session_end", undefined, {
@@ -479,12 +680,26 @@ export function App() {
     beginStage(nextIndex);
   }
 
-  function replayAdventure() {
+  function resetAllProgress() {
+    voiceQueue.current.cancel();
     resetSave();
     const freshSave = loadSave();
     setSave(freshSave);
     setEvents(loadEvents());
-    beginStage(0);
+    setStageIndex(0);
+    setObjects(createPlacedObjects(stages[0]));
+    setWrongClicks(0);
+    setHintsUsed(0);
+    setHintVisible(false);
+    setReward(null);
+    setMarketDifficulty(freshSave.marketProgress.activeDifficulty);
+    setMarketCompletedDifficulties(freshSave.marketProgress.completedDifficulties);
+    setMarketChallengeIndex(0);
+    setMarketPhase("pick");
+    setMarketBasket({});
+    setMarketSelectedTotal(null);
+    setMarketFeedback("");
+    setScreen("intro");
     logEvent("progress_reset");
   }
 
@@ -565,7 +780,7 @@ export function App() {
         <div className="progress-track">
           <div className="progress-fill" style={{ width: `${progress}%` }} />
         </div>
-        <span>{save.completedStageIds.length}/{stages.length}</span>
+        <span>{completedStageCount}/{stages.length}</span>
       </section>
 
       {screen === "intro" && (
@@ -573,7 +788,13 @@ export function App() {
           <div className="chapter-select-copy">
             <div className="island-map" aria-label="零件島地圖">
               {hasProgress && (
-                <button className="map-replay-button" type="button" onClick={replayAdventure} aria-label="再玩一次">
+                <button
+                  className="map-replay-button"
+                  type="button"
+                  onClick={resetAllProgress}
+                  aria-label="重設全部進度"
+                  title="重設全部進度"
+                >
                   <ReplayIcon />
                 </button>
               )}
@@ -581,38 +802,45 @@ export function App() {
                 <img className="island-map-art" src={homeSeaMap} alt="" aria-hidden="true" />
                 <div className="island-core">
                   <img className="map-plane-hotspot" src={planeHotspot} alt="" aria-hidden="true" />
-                {chapters.map((chapter) => (
-                  <button
-                      className={`map-node ${chapter.className} ${chapter.playable ? "map-node-playable" : "map-node-locked"}`}
-                    key={chapter.id}
-                    type="button"
-                    style={{
-                      "--map-x": `${chapter.position.x}%`,
-                      "--map-y": `${chapter.position.y}%`,
-                      "--map-width": `${chapter.position.width}%`,
-                    } as CSSProperties}
-                      aria-label={`${chapter.place}，零件 ${chapter.part}，${chapter.mechanic}。${chapter.story}`}
-                    onClick={() => {
-                      if (chapter.id === "search") {
-                        beginForestFromDesk();
-                        return;
-                      }
-                      if (chapter.id === "math" && chapter.playable) {
-                        beginMarketFromDesk();
-                        return;
-                      }
-                      if (chapter.playable) return;
+                {chapters.map((chapter) => {
+                  const partAcquired = chapter.id === "search"
+                    ? forestPartAcquired
+                    : chapter.id === "math" && marketPartAcquired;
+
+                  return (
+                    <button
+                      className={`map-node ${chapter.className} ${chapter.playable ? "map-node-playable" : "map-node-locked"} ${partAcquired ? "map-node-completed" : ""}`}
+                      key={chapter.id}
+                      type="button"
+                      style={{
+                        "--map-x": `${chapter.position.x}%`,
+                        "--map-y": `${chapter.position.y}%`,
+                        "--map-width": `${chapter.position.width}%`,
+                      } as CSSProperties}
+                      aria-label={`${chapter.place}，零件 ${chapter.part}${partAcquired ? "，已取得" : ""}，${chapter.mechanic}。${chapter.story}`}
+                      onClick={() => {
+                        if (chapter.id === "search") {
+                          beginForestFromDesk();
+                          return;
+                        }
+                        if (chapter.id === "math" && chapter.playable) {
+                          beginMarketFromDesk();
+                          return;
+                        }
+                        if (chapter.playable) return;
                         speak(`${chapter.place}會在下一版開放。`);
-                    }}
-                  >
+                      }}
+                    >
                       <img className="map-hotspot-image" src={chapter.image} alt="" aria-hidden="true" />
                       <span className="part-badge">{chapter.part}</span>
+                      {partAcquired && <span className="part-status-badge" aria-hidden="true">✓ 已取得</span>}
                       {!chapter.playable && <span className="lock-badge" aria-hidden="true"><LockIcon /></span>}
                       <span className="map-node-label">
                         <strong>{chapter.place}</strong>
-                    </span>
-                  </button>
-                ))}
+                      </span>
+                    </button>
+                  );
+                })}
                 </div>
               </div>
               <div className="map-story-card">
@@ -637,36 +865,43 @@ export function App() {
 
       {screen === "stage" && (
         <section className={`stage-layout ${stage.mechanic === "market" ? "market-stage-layout" : ""}`}>
-          <aside className="story-panel">
-            <div className="stage-guide-character" aria-hidden="true">
-              <img src={xiaohangFox} alt="" />
-            </div>
-            <p><RubyText segments={stage.storyRuby} /></p>
-            <HeadingWithAudio
-              segments={stage.instructionRuby}
-              speakText={stage.instructionText}
-              onSpeak={speak}
-            />
-          </aside>
+          {stage.mechanic !== "market" && (
+            <aside className="story-panel">
+              <div className="stage-guide-character" aria-hidden="true">
+                <img src={xiaohangFox} alt="" />
+              </div>
+              <div className="story-panel-surface" aria-hidden="true" />
+              <p><RubyText segments={stage.storyRuby} /></p>
+              <HeadingWithAudio
+                segments={stage.instructionRuby}
+                speakText={stage.instructionText}
+                onSpeak={speak}
+              />
+            </aside>
+          )}
 
           {stage.mechanic === "market" && marketPuzzle && marketChallenge ? (
             <MarketStage
               challenge={marketChallenge}
-              challengeIndex={marketChallengeIndex}
-              totalChallenges={marketPuzzle.challenges.length}
+              currencyIntroText={marketPuzzle.currencyIntroText}
+              currencyIntroRuby={marketPuzzle.currencyIntroRuby}
+              showCurrencyIntro={save.marketProgress.completedChallengeIds.length === 0}
+              difficulties={marketDifficulties}
+              activeDifficulty={marketDifficulty}
+              completedDifficulties={marketCompletedDifficulties}
               basket={marketBasket}
-              coins={marketCoins}
-              coinValues={marketPuzzle.coinValues}
               phase={marketPhase}
               feedback={marketFeedback}
-              total={currentMarketTotal}
-              coinTotal={currentMarketCoinTotal}
-              change={currentMarketChange}
+              total={currentMarketQuestionValue}
+              answerOptions={currentMarketAnswerOptions}
+              selectedTotal={marketSelectedTotal}
+              hintVisible={hintVisible}
               onHome={returnToDesk}
               onHint={showHint}
+              onSpeak={speak}
+              onDifficultySelect={handleMarketDifficultySelect}
               onItemSelect={handleMarketItemClick}
-              onCoinSelect={handleMarketCoinClick}
-              onClearCoins={clearMarketCoins}
+              onAnswerSelect={handleMarketTotalAnswer}
             />
           ) : (
             <div
@@ -764,7 +999,9 @@ export function App() {
               <button
                 className="collection-action-button collection-next-button"
                 type="button"
-                aria-label={stageIndex + 1 >= stages.length ? "查看結果" : "下一段森林路"}
+                aria-label={stage.world === "forest" && stages[stageIndex + 1]?.world !== "forest"
+                  ? "取得零件 A"
+                  : stageIndex + 1 >= stages.length ? "查看結果" : "下一段森林路"}
                 onClick={continueAdventure}
               >
                 <ArrowRightIcon />
@@ -928,166 +1165,277 @@ function CollectionBookModal({
 
 function MarketStage({
   challenge,
-  challengeIndex,
-  totalChallenges,
+  currencyIntroText,
+  currencyIntroRuby,
+  showCurrencyIntro,
+  difficulties,
+  activeDifficulty,
+  completedDifficulties,
   basket,
-  coins,
-  coinValues,
   phase,
   feedback,
   total,
-  coinTotal: selectedCoinTotal,
-  change,
+  answerOptions,
+  selectedTotal,
+  hintVisible,
   onHome,
   onHint,
+  onSpeak,
+  onDifficultySelect,
   onItemSelect,
-  onCoinSelect,
-  onClearCoins,
+  onAnswerSelect,
 }: {
   challenge: MarketChallengeConfig;
-  challengeIndex: number;
-  totalChallenges: number;
+  currencyIntroText: string;
+  currencyIntroRuby: RubySegment[];
+  showCurrencyIntro: boolean;
+  difficulties: MarketDifficultyConfig[];
+  activeDifficulty: MarketDifficultyId;
+  completedDifficulties: MarketDifficultyId[];
   basket: Record<string, number>;
-  coins: number[];
-  coinValues: number[];
   phase: MarketPhase;
   feedback: string;
   total: number;
-  coinTotal: number;
-  change: number;
+  answerOptions: number[];
+  selectedTotal: number | null;
+  hintVisible: boolean;
   onHome: () => void;
   onHint: () => void;
+  onSpeak: (text: string) => void;
+  onDifficultySelect: (difficulty: MarketDifficultyId) => void;
   onItemSelect: (assetId: string) => void;
-  onCoinSelect: (value: number) => void;
-  onClearCoins: () => void;
+  onAnswerSelect: (value: number) => void;
 }) {
-  const marketItemIds = Array.from(new Set([
-    ...challenge.order.map((item) => item.assetId),
-    "apple",
-    "pine_cone",
-    "pink_flower",
-    "mushroom",
-    "acorn",
-  ])).slice(0, 5);
-  const targetCoinTotal = phase === "change" ? change : total;
+  const marketItemIds = marketShelfItemIds;
+  const calculationLines = marketCalculationLines(challenge);
+  const activeDifficultyDetails = difficulties.find(
+    (difficulty) => difficulty.id === activeDifficulty
+  ) ?? difficulties[0];
+  const isNumberRecognition = activeDifficultyDetails?.questionMode === "number-recognition";
+  const basketSlots = challenge.order.flatMap((item) =>
+    Array.from({ length: item.count }, (_, slotIndex) => {
+      const isFilled = (basket[item.assetId] ?? 0) > slotIndex;
+
+      return (
+        <span
+          key={`${item.assetId}-${slotIndex}`}
+          className={`market-basket-slot ${isFilled ? "ready" : ""}`}
+          aria-label={`${assets[item.assetId].label}${isFilled ? "已放入" : "等待放入"}`}
+        >
+          {isFilled ? <ObjectIcon assetId={item.assetId} compact /> : <i aria-hidden="true" />}
+        </span>
+      );
+    })
+  );
+  const selectedBasketItems = Object.entries(basket).flatMap(([assetId, count]) =>
+    Array.from({ length: count }, (_, index) => ({ assetId, key: `${assetId}-${index}` }))
+  );
+  const feedbackText = feedback || (phase === "pick"
+    ? "先幫客人拿商品。"
+    : isNumberRecognition ? "數數看籃子裡有幾個。" : "算算看總共幾貝。");
+  const difficultyControls = difficulties.map((difficulty) => {
+    const unlocked = isMarketDifficultyUnlocked(difficulty, completedDifficulties);
+    const active = activeDifficulty === difficulty.id;
+    const completed = completedDifficulties.includes(difficulty.id);
+
+    return (
+      <button
+        className={`market-difficulty-button ${difficulty.id === "boss" ? "boss" : ""} ${active ? "active" : ""} ${completed ? "completed" : ""}`}
+        type="button"
+        key={difficulty.id}
+        onClick={() => onDifficultySelect(difficulty.id)}
+        aria-label={`${difficulty.label}${unlocked ? "" : "，尚未解鎖"}`}
+        aria-current={active ? "true" : undefined}
+        disabled={!unlocked}
+      >
+        <span>{difficulty.label}</span>
+        <small>{difficulty.ageLabel}</small>
+        {!unlocked && <LockIcon />}
+      </button>
+    );
+  });
 
   return (
-    <div className="market-stage" aria-label="市場打工">
+    <div className={`market-stage market-stage-${phase}`} aria-label="市場打工">
       <div className="stage-toolbar market-toolbar" aria-label="市場工具列">
         <button className="home-fab" type="button" aria-label="回桌面" onClick={onHome}>
           <HomeIcon />
         </button>
-        <div className="market-progress-pill">
-          <span>客人</span>
-          <strong>{challengeIndex + 1}/{totalChallenges}</strong>
-        </div>
         <button className="hint-fab" type="button" aria-label="小航提示" onClick={onHint}>
           <LightbulbIcon />
         </button>
       </div>
 
+      {phase !== "pick" && (
+        <div className="market-difficulty-row" aria-label="市場難度">
+          {difficultyControls}
+        </div>
+      )}
+
+      {activeDifficultyDetails && phase !== "pick" && (
+        <div
+          className="market-active-level"
+          aria-live="polite"
+        >
+          <span>現在是</span>
+          <strong>{activeDifficultyDetails.label}</strong>
+          <em>{activeDifficultyDetails.ageLabel} · {activeDifficultyDetails.skillLabel}</em>
+          {completedDifficulties.includes(activeDifficultyDetails.id) && <b>已完成</b>}
+        </div>
+      )}
+
       <div className="market-sky" aria-hidden="true" />
-      <section className="market-customer-card">
-        <div className="market-customer-avatar" aria-hidden="true">
-          {challenge.customerName.slice(0, 1)}
-        </div>
-        <div>
-          <p className="eyebrow">
-            <RubyText segments={[{ text: challenge.customerName, ruby: challenge.customerRuby }]} />
-          </p>
-          <h2>
-            <RubyText segments={challenge.requestRuby} />
-          </h2>
-        </div>
-      </section>
-
-      <section className="market-stall" aria-label="商品攤位">
-        <div className="market-awning" aria-hidden="true" />
-        <div className="market-shelves">
-          {marketItemIds.map((assetId) => {
-            const requiredCount = marketRequiredCount(challenge, assetId);
-            const selectedCount = basket[assetId] ?? 0;
-            const isDone = requiredCount > 0 && selectedCount >= requiredCount;
-
-            return (
-              <button
-                className={`market-item-card ${requiredCount > 0 ? "wanted" : ""} ${isDone ? "done" : ""}`}
-                type="button"
-                key={assetId}
-                onClick={() => onItemSelect(assetId)}
-                disabled={phase !== "pick"}
-              >
-                <ObjectIcon assetId={assetId} />
-                <span>{assets[assetId].label}</span>
-                <small>{challenge.prices[assetId] ?? "?"} 貝</small>
-                {requiredCount > 0 && (
-                  <b>{selectedCount}/{requiredCount}</b>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="market-register" aria-label="結帳盤">
-        <div className="market-basket">
-          <p>籃子</p>
-          <div className="market-basket-items">
-            {challenge.order.map((item) => (
-              <span key={item.assetId} className={(basket[item.assetId] ?? 0) >= item.count ? "ready" : ""}>
-                <ObjectIcon assetId={item.assetId} compact />
-                {basket[item.assetId] ?? 0}/{item.count}
-              </span>
-            ))}
+      {phase === "pick" ? (
+        <div className="market-order-screen market-order-screen-art">
+          <img
+            className="market-art-background"
+            src={marketStallBackground}
+            alt=""
+            aria-hidden="true"
+          />
+          <div className="market-level-board">
+            <img className="market-art-sign" src={marketSignArt} alt="" aria-hidden="true" />
+            <div className="market-difficulty-row market-difficulty-row-art" aria-label="市場難度">
+              {difficultyControls}
+            </div>
           </div>
-        </div>
-        <div className="market-total-card">
-          <span>{phase === "change" ? "要找零" : "要收"}</span>
-          <strong>{targetCoinTotal}</strong>
-          <small>
-            {phase === "change"
-              ? `總價 ${total}，客人給 ${challenge.paymentGiven}`
-              : `商品總價 ${total}`}
-          </small>
-        </div>
-        <div className="market-coin-tray">
-          <p>{phase === "pick" ? "先把商品放進籃子" : `已放 ${selectedCoinTotal}/${targetCoinTotal}`}</p>
-          <div className="market-coins">
-            {coinValues.map((value) => (
+          {showCurrencyIntro && !isNumberRecognition && (
+            <section className="market-currency-intro market-currency-intro-art" aria-label="市場貨幣說明">
               <button
-                className="shell-coin"
+                className="market-inline-audio"
+                type="button"
+                aria-label="播放貝殼說明"
+                onClick={() => onSpeak(currencyIntroText)}
+              >
+                <SpeakerIcon />
+              </button>
+              <span className="market-shell-coin" aria-hidden="true">貝</span>
+              <p><RubyText segments={currencyIntroRuby} /></p>
+            </section>
+          )}
+          <section className="market-stall market-stall-art" aria-label="商品攤位">
+            <div className="market-shelves">
+              {marketItemIds.map((assetId) => {
+                const requiredCount = marketRequiredCount(challenge, assetId);
+                const selectedCount = basket[assetId] ?? 0;
+                const isDone = requiredCount > 0 && selectedCount >= requiredCount;
+                const position = marketShelfPositions[assetId];
+
+                return (
+                  <button
+                    className={`market-item-card market-item-art ${hintVisible && requiredCount > selectedCount ? "hinted" : ""} ${isDone ? "done" : ""}`}
+                    type="button"
+                    key={assetId}
+                    style={{
+                      "--market-item-x": `${position.x}%`,
+                      "--market-item-y": `${position.y}%`,
+                      "--market-item-rotation": `${position.rotation}deg`,
+                    } as CSSProperties}
+                    onClick={() => onItemSelect(assetId)}
+                    aria-label={isNumberRecognition
+                      ? assets[assetId].label
+                      : `${assets[assetId].label}，${marketPrice(challenge, assetId)} 貝`}
+                  >
+                    <ObjectIcon assetId={assetId} />
+                    <span className="market-item-label">
+                      <img src={marketPriceTagArt} alt="" aria-hidden="true" />
+                      <span className="market-item-label-copy">
+                        <strong>{assets[assetId].label}</strong>
+                        {!isNumberRecognition && <small>{marketPrice(challenge, assetId)} 貝</small>}
+                      </span>
+                    </span>
+                    {isDone && <b aria-hidden="true">✓</b>}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="market-order-basket market-order-basket-art" aria-label="客人的籃子">
+            <img src={marketBasketArt} alt="" aria-hidden="true" />
+            <div className="market-art-basket-items" aria-live="polite">
+              {selectedBasketItems.map((item) => (
+                <span key={item.key}>
+                  <ObjectIcon assetId={item.assetId} compact />
+                </span>
+              ))}
+            </div>
+          </section>
+
+          <section className="market-dialogue market-customer-dialogue market-customer-dialogue-art" aria-label="客人訂單">
+            <div className="market-dialogue-copy">
+              <p className="eyebrow market-customer-name">
+                <RubyText segments={[{ text: challenge.customerName, ruby: challenge.customerRuby }]} />
+              </p>
+              <HeadingWithAudio
+                segments={challenge.requestRuby}
+                speakText={challenge.requestText}
+                onSpeak={onSpeak}
+                audioLabel="播放客人台詞"
+              />
+              <p className="market-feedback" aria-live="polite">
+                {feedbackText}
+              </p>
+            </div>
+          </section>
+        </div>
+      ) : (
+        <div className="market-checkout-screen">
+          <section className="market-basket market-checkout-basket" aria-label="裝好的籃子">
+            <p>籃子裡有</p>
+            <div className="market-basket-items">{basketSlots}</div>
+          </section>
+
+          <section className="market-answer-tray market-checkout-panel" aria-label="算總價">
+            <p className="eyebrow">幫小航算一算</p>
+            <h2>{isNumberRecognition ? "籃子裡有幾個？" : "總共幾貝？"}</h2>
+            {isNumberRecognition ? (
+              <div className="market-number-question" aria-label="辨認商品數量">
+                <span>數一數</span>
+                <strong>{selectedTotal ?? "?"}</strong>
+                <span>個</span>
+              </div>
+            ) : (
+              <div className="market-equation" aria-label="商品算式">
+                {calculationLines.map((line, index) => (
+                  <span className="market-equation-part" key={line.key}>
+                    {index > 0 && <em aria-hidden="true">+</em>}
+                    <span>
+                      <ObjectIcon assetId={line.assetId} compact />
+                      <b>{assets[line.assetId].label}</b>
+                      <strong>{line.price} 貝</strong>
+                    </span>
+                  </span>
+                ))}
+                <em aria-hidden="true">=</em>
+                <strong className="market-equation-answer">{selectedTotal ?? "?"}</strong>
+              </div>
+            )}
+          <p>{isNumberRecognition ? "點一下正確的數字" : "點一下正確的總價"}</p>
+          <div className="market-answer-options">
+            {answerOptions.map((value) => (
+              <button
+                className={`market-answer-button ${selectedTotal === value ? "selected" : ""} ${
+                  selectedTotal === value && value !== total ? "wrong" : ""
+                } ${selectedTotal === value && value === total ? "correct" : ""}`}
                 type="button"
                 key={value}
-                onClick={() => onCoinSelect(value)}
-                disabled={phase === "pick"}
+                onClick={() => onAnswerSelect(value)}
+                aria-label={`選擇 ${value}${isNumberRecognition ? " 個" : " 貝"}`}
               >
-                {value}
+                <strong>{value}</strong>
+                <span>{isNumberRecognition ? "個" : "貝"}</span>
               </button>
             ))}
-            <button
-              className="coin-clear-button"
-              type="button"
-              onClick={onClearCoins}
-              disabled={coins.length === 0}
-            >
-              重數
-            </button>
           </div>
-          <div className="coin-stack" aria-label="已放入的貝殼幣">
-            {coins.length === 0 ? (
-              <span>等待貝殼幣</span>
-            ) : (
-              coins.map((value, index) => (
-                <i key={`${value}-${index}`}>{value}</i>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
+            <p className="market-feedback" aria-live="polite">
+              {feedbackText}
+            </p>
+          </section>
 
-      <p className="market-feedback" aria-live="polite">
-        {feedback || (phase === "pick" ? "先幫客人拿商品。" : "點貝殼幣放進盤子。")}
-      </p>
+          <img className="market-cashier-fox" src={xiaohangFox} alt="" aria-hidden="true" />
+        </div>
+      )}
     </div>
   );
 }
@@ -1132,17 +1480,19 @@ function HeadingWithAudio({
   segments,
   speakText,
   onSpeak,
+  audioLabel = "播放題目",
 }: {
   segments: RubySegment[];
   speakText: string;
   onSpeak: (text: string) => void;
+  audioLabel?: string;
 }) {
   return (
     <div className="audio-heading">
       <button
         className="audio-button"
         type="button"
-        aria-label="播放題目"
+        aria-label={audioLabel}
         onClick={() => onSpeak(speakText)}
       >
         <SpeakerIcon />

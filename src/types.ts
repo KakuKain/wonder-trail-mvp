@@ -53,21 +53,42 @@ export type MarketOrderLine = {
   count: number;
 };
 
+export type MarketDifficultyId = "beginner" | "intermediate" | "advanced" | "boss";
+export type MarketQuestionMode = "number-recognition" | "addition" | "multi-addition" | "challenge";
+
+export type MarketDifficultyConfig = {
+  id: MarketDifficultyId;
+  label: string;
+  shortLabel: string;
+  ageLabel: string;
+  skillLabel: string;
+  questionMode: MarketQuestionMode;
+  unlockAfter?: MarketDifficultyId;
+};
+
 export type MarketChallengeConfig = {
   id: string;
-  mode: "pick" | "pay" | "change";
+  difficulty: MarketDifficultyId;
   customerName: string;
   customerRuby: string;
   requestText: string;
   requestRuby: RubySegment[];
   order: MarketOrderLine[];
   prices: Record<string, number>;
-  paymentGiven?: number;
 };
 
 export type MarketPuzzleConfig = {
-  coinValues: number[];
+  currencyIntroText: string;
+  currencyIntroRuby: RubySegment[];
+  difficulties: MarketDifficultyConfig[];
   challenges: MarketChallengeConfig[];
+};
+
+export type MarketProgress = {
+  completedChallengeIds: string[];
+  completedDifficulties: MarketDifficultyId[];
+  activeDifficulty: MarketDifficultyId;
+  nextChallengeByDifficulty: Partial<Record<MarketDifficultyId, number>>;
 };
 
 export type StageConfig = {
@@ -106,6 +127,7 @@ export type SaveData = {
   completedStageIds: string[];
   stars: number;
   stickers: string[];
+  marketProgress: MarketProgress;
   lastPlayedAt?: string;
 };
 
@@ -118,6 +140,7 @@ export type GameEvent = {
     | "wrong_click"
     | "hint_show"
     | "reward_claimed"
+    | "chapter_complete"
     | "stage_exit"
     | "progress_reset";
   sessionId: string;
