@@ -204,6 +204,7 @@ export function App() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [collectionPage, setCollectionPage] = useState(0);
+  const [homeMapReady, setHomeMapReady] = useState(false);
   const [stageBackgroundReady, setStageBackgroundReady] = useState(false);
   const [stageBackgroundIndex, setStageBackgroundIndex] = useState(() =>
     Math.floor(Math.random() * forestBackgrounds.length)
@@ -314,7 +315,6 @@ export function App() {
 
   function beginStage(index = stageIndex) {
     const nextStage = stages[index];
-    const nextBackgroundIndex = Math.floor(Math.random() * forestBackgrounds.length);
     const savedMarketProgress = save.marketProgress;
     const savedMarketDifficulty = nextStage.marketPuzzle?.difficulties.find(
       (difficulty) => difficulty.id === savedMarketProgress.activeDifficulty
@@ -330,7 +330,6 @@ export function App() {
 
     setStageIndex(index);
     setStageBackgroundReady(nextStage.mechanic !== "search");
-    setStageBackgroundIndex(nextBackgroundIndex);
     setObjects(createPlacedObjects(nextStage));
     setWrongClicks(0);
     setHintsUsed(0);
@@ -378,6 +377,12 @@ export function App() {
     writeSave(nextSave);
     setReward(nextReward);
     setScreen("reward");
+    if (stage.mechanic === "search" && forestBackgrounds.length > 1) {
+      setStageBackgroundIndex((currentIndex) => {
+        const offset = 1 + Math.floor(Math.random() * (forestBackgrounds.length - 1));
+        return (currentIndex + offset) % forestBackgrounds.length;
+      });
+    }
     voiceQueue.current.speak(pickScript(voiceScripts.reward, stageIndex), {
       tone: "positive",
       interrupt: true,
@@ -736,6 +741,19 @@ export function App() {
   }, [selectedVoice]);
 
   useEffect(() => {
+    const canPreload = screen === "reward" || (screen === "intro" && homeMapReady);
+    if (!canPreload) return undefined;
+
+    const image = new Image();
+    image.decoding = "async";
+    image.src = stageBackground.image;
+    return () => {
+      image.onload = null;
+      image.onerror = null;
+    };
+  }, [homeMapReady, screen, stageBackground.image]);
+
+  useEffect(() => {
     if (screen !== "stage") return undefined;
 
     const timer = window.setTimeout(() => {
@@ -799,7 +817,16 @@ export function App() {
                 </button>
               )}
               <div className="map-scene-frame">
-                <img className="island-map-art" src={homeSeaMap} alt="" aria-hidden="true" />
+                <img
+                  className="island-map-art"
+                  src={homeSeaMap}
+                  alt=""
+                  aria-hidden="true"
+                  decoding="async"
+                  fetchPriority="high"
+                  onLoad={() => setHomeMapReady(true)}
+                  onError={() => setHomeMapReady(true)}
+                />
                 <div className="island-core">
                   <img className="map-plane-hotspot" src={planeHotspot} alt="" aria-hidden="true" />
                 {chapters.map((chapter) => {
@@ -915,6 +942,8 @@ export function App() {
                 src={stageBackground.image}
                 alt=""
                 aria-hidden="true"
+                decoding="async"
+                fetchPriority="high"
                 onLoad={() => setStageBackgroundReady(true)}
                 onError={() => setStageBackgroundReady(true)}
                 style={{
