@@ -1768,10 +1768,10 @@ p {
 
 .market-level-board {
   position: absolute;
-  top: max(clamp(128px, 17svh, 156px), calc(env(safe-area-inset-top) + 118px));
+  top: max(clamp(176px, 23svh, 196px), calc(env(safe-area-inset-top) + 118px));
   left: 50%;
   z-index: 2;
-  width: min(354px, 84%);
+  width: min(366px, 88%);
   aspect-ratio: 1533 / 565;
   transform: translateX(-50%);
 }
@@ -1788,9 +1788,9 @@ p {
 
 .market-difficulty-row-art {
   position: absolute;
-  top: 31%;
-  right: 5.5%;
-  left: 5.5%;
+  top: 30%;
+  right: 5%;
+  left: 5%;
   z-index: 5;
   width: auto;
   margin: 0;
@@ -1798,7 +1798,7 @@ p {
 }
 
 .market-difficulty-row-art .market-difficulty-button {
-  min-height: 52px;
+  min-height: 50px;
   padding: 4px 2px;
   border: 0;
   border-right: 2px solid rgba(82, 43, 21, 0.18);
@@ -2012,10 +2012,10 @@ p {
 
 .market-order-basket-art {
   position: absolute;
-  top: 75%;
+  top: min(73%, calc(100% - 222px));
   left: 50%;
   z-index: 6;
-  width: min(190px, 45%);
+  width: min(178px, 42%);
   margin: 0;
   transform: translateX(-50%);
   pointer-events: none;
@@ -2064,8 +2064,8 @@ p {
   left: 0;
   z-index: 9;
   grid-template-columns: minmax(0, 1fr);
-  min-height: 126px;
-  padding: 16px 18px max(14px, env(safe-area-inset-bottom));
+  min-height: 114px;
+  padding: 13px 18px max(12px, env(safe-area-inset-bottom));
   border-right: 0;
   border-bottom: 0;
   border-left: 0;
@@ -2080,7 +2080,7 @@ p {
 
 .market-customer-dialogue-art .market-dialogue-copy {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   width: min(390px, 100%);
   margin: 0 auto;
 }
@@ -2092,13 +2092,13 @@ p {
 }
 
 .market-customer-dialogue-art h2 {
-  font-size: clamp(1.2rem, 4.7vw, 1.52rem);
-  line-height: 1.18;
+  font-size: clamp(1.14rem, 4.35vw, 1.44rem);
+  line-height: 1.14;
 }
 
 .market-customer-dialogue-art .market-feedback {
-  margin-top: 4px;
-  padding: 7px 0 0;
+  margin-top: 2px;
+  padding: 6px 0 0;
   border: 0;
   border-top: 2px dashed rgba(107, 70, 52, 0.18);
   border-radius: 0;

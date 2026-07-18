@@ -49,11 +49,18 @@ const marketItemPrices: Record<string, number> = {
 };
 const marketShelfItemIds = ["apple", "pine_cone", "pink_flower", "mushroom", "acorn"];
 const marketShelfPositions: Record<string, { x: number; y: number; rotation: number }> = {
-  apple: { x: 24, y: 57.6, rotation: -3 },
-  pine_cone: { x: 50, y: 57.6, rotation: 2 },
-  pink_flower: { x: 76, y: 57.6, rotation: -1 },
-  mushroom: { x: 36.5, y: 68.7, rotation: 3 },
-  acorn: { x: 63.5, y: 68.7, rotation: -2 },
+  apple: { x: 24, y: 56.4, rotation: -3 },
+  pine_cone: { x: 50, y: 56.4, rotation: 2 },
+  pink_flower: { x: 76, y: 56.4, rotation: -1 },
+  mushroom: { x: 25, y: 70.5, rotation: 3 },
+  acorn: { x: 75, y: 70.5, rotation: -2 },
+};
+const marketItemSpeech: Record<string, { counter: string; ruby: string }> = {
+  apple: { counter: "顆", ruby: "ㄆㄧㄥˊ ㄍㄨㄛˇ" },
+  pine_cone: { counter: "顆", ruby: "ㄙㄨㄥ ㄍㄨㄛˇ" },
+  pink_flower: { counter: "朵", ruby: "ㄈㄣˇ ㄏㄨㄥˊ ㄏㄨㄚ" },
+  mushroom: { counter: "個", ruby: "ㄇㄛˊ ㄍㄨ" },
+  acorn: { counter: "顆", ruby: "ㄒㄧㄤˋ ㄍㄨㄛˇ" },
 };
 const chapters = [
   {
@@ -188,6 +195,67 @@ function marketCalculationLines(challenge: MarketChallengeConfig) {
   );
 }
 
+function randomizeMarketChallenge(template: MarketChallengeConfig, seed: number) {
+  let state = (Math.floor(seed) ^ Array.from(template.id).reduce(
+    (hash, character) => Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0,
+    2166136261
+  )) >>> 0;
+  const random = () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+  const randomBetween = (minimum: number, maximum: number) =>
+    minimum + Math.floor(random() * (maximum - minimum + 1));
+  const shuffledItems = [...marketShelfItemIds];
+
+  for (let index = shuffledItems.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [shuffledItems[index], shuffledItems[swapIndex]] = [shuffledItems[swapIndex], shuffledItems[index]];
+  }
+
+  const rules: Record<MarketDifficultyId, {
+    itemTypeMinimum: number;
+    itemTypeMaximum: number;
+    totalMinimum: number;
+    totalMaximum: number;
+  }> = {
+    beginner: { itemTypeMinimum: 1, itemTypeMaximum: 1, totalMinimum: 1, totalMaximum: 3 },
+    intermediate: { itemTypeMinimum: 1, itemTypeMaximum: 2, totalMinimum: 2, totalMaximum: 3 },
+    advanced: { itemTypeMinimum: 2, itemTypeMaximum: 3, totalMinimum: 3, totalMaximum: 4 },
+    boss: { itemTypeMinimum: 3, itemTypeMaximum: 4, totalMinimum: 4, totalMaximum: 5 },
+  };
+  const rule = rules[template.difficulty];
+  const itemTypeCount = randomBetween(rule.itemTypeMinimum, rule.itemTypeMaximum);
+  const totalCount = randomBetween(Math.max(rule.totalMinimum, itemTypeCount), rule.totalMaximum);
+  const order = shuffledItems.slice(0, itemTypeCount).map((assetId) => ({ assetId, count: 1 }));
+
+  for (let remaining = totalCount - itemTypeCount; remaining > 0; remaining -= 1) {
+    order[Math.floor(random() * order.length)].count += 1;
+  }
+
+  const requestText = `我想買 ${order.map((item) => {
+    const speech = marketItemSpeech[item.assetId];
+    return `${item.count} ${speech.counter}${assets[item.assetId].label}`;
+  }).join("和 ")}。`;
+  const requestRuby: RubySegment[] = ["我想買 "];
+
+  order.forEach((item, index) => {
+    if (index > 0) requestRuby.push("和 ");
+    const speech = marketItemSpeech[item.assetId];
+    requestRuby.push(`${item.count} ${speech.counter}`);
+    requestRuby.push({ text: assets[item.assetId].label, ruby: speech.ruby });
+  });
+  requestRuby.push("。");
+
+  return {
+    ...template,
+    requestText,
+    requestRuby,
+    order,
+    prices: Object.fromEntries(order.map((item) => [item.assetId, marketItemPrices[item.assetId]])),
+  };
+}
+
 export function App() {
   const [save, setSave] = useState<SaveData>(() => loadSave());
   const [screen, setScreen] = useState<Screen>("intro");
@@ -218,6 +286,7 @@ export function App() {
   const [marketChallengeIndex, setMarketChallengeIndex] = useState(
     save.marketProgress.nextChallengeByDifficulty[save.marketProgress.activeDifficulty] ?? 0
   );
+  const [marketRoundSeed, setMarketRoundSeed] = useState(() => Date.now() + Math.random());
   const [marketPhase, setMarketPhase] = useState<MarketPhase>("pick");
   const [marketBasket, setMarketBasket] = useState<Record<string, number>>({});
   const [marketSelectedTotal, setMarketSelectedTotal] = useState<number | null>(null);
@@ -270,7 +339,13 @@ export function App() {
   const activeMarketDifficulty = marketDifficulties.find(
     (difficulty) => difficulty.id === marketDifficulty
   );
-  const marketChallenge = marketDifficultyChallenges[marketChallengeIndex];
+  const marketChallengeTemplate = marketDifficultyChallenges[marketChallengeIndex];
+  const marketChallenge = useMemo(
+    () => marketChallengeTemplate
+      ? randomizeMarketChallenge(marketChallengeTemplate, marketRoundSeed)
+      : undefined,
+    [marketChallengeTemplate, marketRoundSeed]
+  );
   const currentMarketQuestionValue = marketChallenge && activeMarketDifficulty
     ? marketQuestionValue(marketChallenge, activeMarketDifficulty.questionMode)
     : 0;
@@ -338,6 +413,7 @@ export function App() {
     setMarketDifficulty(savedMarketDifficulty);
     setMarketCompletedDifficulties(savedMarketProgress.completedDifficulties);
     setMarketChallengeIndex(savedMarketChallengeIndex);
+    setMarketRoundSeed(Date.now() + Math.random());
     setMarketPhase("pick");
     setMarketBasket({});
     setMarketSelectedTotal(null);
@@ -446,6 +522,7 @@ export function App() {
     }
     setMarketDifficulty(nextDifficulty);
     setMarketChallengeIndex(nextIndex);
+    setMarketRoundSeed(Date.now() + Math.random());
     setMarketPhase("pick");
     setMarketBasket({});
     setMarketSelectedTotal(null);
@@ -700,6 +777,7 @@ export function App() {
     setMarketDifficulty(freshSave.marketProgress.activeDifficulty);
     setMarketCompletedDifficulties(freshSave.marketProgress.completedDifficulties);
     setMarketChallengeIndex(0);
+    setMarketRoundSeed(Date.now() + Math.random());
     setMarketPhase("pick");
     setMarketBasket({});
     setMarketSelectedTotal(null);
