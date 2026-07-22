@@ -3474,3 +3474,91 @@ p {
     min-height: 100svh;
   }
 }
+
+/* A short landscape viewport leaves less vertical room between the shelf rows.
+   Keep each product's hit area separate so a tap cannot land on the item below. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .market-item-art {
+    width: 76px;
+    gap: 2px;
+  }
+
+  .market-item-art .object-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .market-item-art .market-item-label {
+    width: 76px;
+    height: 26px;
+  }
+
+  .market-item-art .market-item-label-copy {
+    inset: 3px 6px;
+  }
+
+  .market-item-art .market-item-label-copy strong,
+  .market-item-art .market-item-label-copy small {
+    font-size: 0.72rem;
+  }
+
+  .market-item-art:nth-child(-n + 3) {
+    --market-item-y: 42% !important;
+  }
+
+  .market-item-art:nth-child(n + 4) {
+    --market-item-y: 61% !important;
+  }
+}
+
+.save-protection-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(1080px, calc(100% - 32px));
+  margin: 12px auto 0;
+  padding: 14px 16px;
+  color: #5d3414;
+  background: #fff3c9;
+  border: 2px solid #e8ab45;
+  border-radius: 16px;
+  box-shadow: 0 4px 0 rgba(105, 64, 18, 0.12);
+}
+
+.save-protection-notice strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.save-protection-notice p {
+  margin: 3px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.save-protection-notice button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 9px 12px;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  background: #a85d26;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+@media (max-width: 620px) {
+  .save-protection-notice {
+    align-items: stretch;
+    flex-direction: column;
+    width: min(100% - 20px, 480px);
+    margin-top: 8px;
+  }
+
+  .save-protection-notice button {
+    width: 100%;
+  }
+}

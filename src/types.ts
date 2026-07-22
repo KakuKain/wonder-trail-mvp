@@ -124,6 +124,7 @@ export type PlacedObject = {
 };
 
 export type SaveData = {
+  version: number;
   completedStageIds: string[];
   stars: number;
   stickers: string[];
