@@ -15,12 +15,12 @@ function fillCurrentOrder(controller: ReturnType<typeof renderMarketController>)
   const challenge = controller.result.current.view.market.challenge;
   if (!challenge) throw new Error("Expected a market challenge");
 
-  act(() => {
-    challenge.order.forEach((line) => {
-      for (let count = 0; count < line.count; count += 1) {
-        controller.result.current.actions.selectMarketItem(line.assetId);
-      }
-    });
+  challenge.order.forEach((line) => {
+    for (let count = 0; count < line.count; count += 1) {
+      // Each tap is a separate browser event. Keeping it in its own act also
+      // ensures the next selection receives the latest basket state.
+      act(() => controller.result.current.actions.selectMarketItem(line.assetId));
+    }
   });
 
   expect(controller.result.current.view.market.phase).toBe("total");
