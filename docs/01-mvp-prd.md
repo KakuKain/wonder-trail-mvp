@@ -52,7 +52,7 @@ Needs:
 
 ## 5. MVP Goal
 
-Validate whether the core adventure loop is engaging enough for children to complete a 10 to 15 minute session and want to return another day.
+Validate whether the core adventure loop is engaging enough for children to complete a short, 5 to 8 minute session and want to return another day.
 
 The MVP should answer:
 
@@ -70,7 +70,7 @@ The MVP should answer:
 - One world: Forest
 - One guide character: 小航
 - One mechanic: Search
-- 10 to 15 stages
+- Five short Search stages
 - One short story arc
 - Basic rewards: stars and stickers
 - Simple collection screen
@@ -116,7 +116,7 @@ Story ends naturally
 Return tomorrow
 ```
 
-Target session length: 10 to 15 minutes.
+Target session length: 5 to 8 minutes. This replaces the earlier 10 to 15 minute assumption after child playtesting showed that a ten-stage session felt too long.
 
 The MVP should avoid infinite play. The story should provide a gentle stopping point.
 
@@ -197,7 +197,7 @@ The MVP should avoid infinite play. The story should provide a gentle stopping p
 
 ### Primary Metrics
 
-- Session duration: child plays at least 10 minutes.
+- Session duration: child can complete the five-stage adventure in roughly 5 to 8 minutes without it feeling too long.
 - Return intent: child says or shows interest in playing again.
 - Completion rate: child completes the daily adventure.
 
@@ -253,8 +253,8 @@ Example event payload:
 The MVP is acceptable when:
 
 1. A child can complete a full forest adventure from start to finish.
-2. The experience lasts roughly 10 to 15 minutes.
-3. At least 10 Search stages can be loaded from config.
+2. The five-stage experience lasts roughly 5 to 8 minutes and provides a natural stopping point.
+3. Five Search stages can be loaded from config.
 4. Rewards persist locally after closing and reopening.
 5. Basic events are recorded for each stage.
 6. The final screen gives a clear and gentle ending.

@@ -618,24 +618,22 @@ p {
 }
 
 .part-status-badge {
-  position: absolute;
-  top: -2%;
-  left: 50%;
-  z-index: 9;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 3px 8px;
-  border: 2px solid rgba(255, 248, 217, 0.94);
-  border-radius: 999px;
   color: #fffbe3;
+}
+
+.part-status-badge span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 3px solid #fff9d6;
+  border-radius: 50%;
   background: #56884c;
-  box-shadow: 0 3px 0 rgba(62, 52, 32, 0.2);
-  font-size: 0.76rem;
-  font-weight: var(--child-font-bold);
-  white-space: nowrap;
-  transform: translateX(-50%);
+  box-shadow: 0 3px 0 rgba(37, 86, 49, 0.35);
+  font-family: var(--ui-number-font);
+  font-size: 1.65rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .map-node-completed .part-badge {
@@ -2122,7 +2120,7 @@ p {
 
 .search-object::before {
   position: absolute;
-  inset: -12px;
+  inset: calc(var(--hitbox-inset, 12px) * -1);
   content: "";
   border-radius: 50%;
 }
@@ -2785,6 +2783,27 @@ p {
   transform: translateX(-50%);
   pointer-events: none;
   animation: completePartFloat 2600ms ease-in-out infinite;
+}
+
+.complete-replay-mark {
+  position: absolute;
+  top: clamp(126px, 23svh, 210px);
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: clamp(118px, 30vw, 170px);
+  aspect-ratio: 1;
+  border: 8px solid #fff6cd;
+  border-radius: 50%;
+  color: #fffbe3;
+  background: #56884c;
+  box-shadow: 0 10px 0 rgba(37, 86, 49, 0.26), 0 0 0 10px rgba(255, 224, 111, 0.24);
+  font-family: var(--ui-number-font);
+  font-size: clamp(4rem, 12vw, 6.5rem);
+  font-weight: 900;
+  line-height: 1;
+  transform: translateX(-50%);
 }
 
 .complete-part-reward img {

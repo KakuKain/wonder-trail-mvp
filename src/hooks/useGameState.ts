@@ -24,6 +24,7 @@ export function useGameState() {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [hintVisible, setHintVisible] = useState(false);
   const [reward, setReward] = useState<StageConfig["reward"] | null>(null);
+  const [lastCompletionWasNew, setLastCompletionWasNew] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
   const [events, setEvents] = useState<GameEvent[]>(() => loadEvents());
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -44,7 +45,7 @@ export function useGameState() {
   return {
     save, setSave, saveProtectionMode, setSaveProtectionMode, screen, setScreen, stageIndex, setStageIndex, objects, setObjects,
     wrongClicks, setWrongClicks, hintsUsed, setHintsUsed, hintVisible, setHintVisible,
-    reward, setReward, eventsOpen, setEventsOpen, events, setEvents, voices, setVoices,
+    reward, setReward, lastCompletionWasNew, setLastCompletionWasNew, eventsOpen, setEventsOpen, events, setEvents, voices, setVoices,
     collectionOpen, setCollectionOpen, collectionPage, setCollectionPage,
     homeMapReady, setHomeMapReady, stageBackgroundReady, setStageBackgroundReady,
     stageBackgroundIndex, setStageBackgroundIndex, marketDifficulty, setMarketDifficulty,

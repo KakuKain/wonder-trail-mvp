@@ -27,10 +27,12 @@ export function useForestFlow({ game, logEvent, speak, persistSave }: Props) {
     const currentStage = stages[game.stageIndex];
     const durationMs = Date.now() - stageStartedAt.current;
     const reward = currentStage.reward;
+    const completionWasNew = !sourceSave.completedStageIds.includes(currentStage.id);
     const nextSave = completeStageSave(sourceSave, currentStage.id, reward, new Date().toISOString());
 
     game.setObjects(nextObjects);
     if (!persistSave(nextSave)) return undefined;
+    game.setLastCompletionWasNew(completionWasNew);
     game.setReward(reward);
     game.setScreen("reward");
     if (currentStage.mechanic === "search" && forestBackgrounds.length > 1) {

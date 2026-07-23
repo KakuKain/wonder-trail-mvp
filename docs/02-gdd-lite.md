@@ -132,85 +132,48 @@ Transition
 
 Target stage length: 30 to 90 seconds.
 
-## 7. Stage List Draft
+## 7. Current MVP Stage List
+
+The forest adventure intentionally contains five stages. Early child playtesting found that a ten-stage session felt too long, so this version prioritizes a satisfying short ending over more content.
 
 ### Stage 1: Red Butterfly
 
-Goal: Find 1 red butterfly.
+Goal: Find 3 red butterflies.
 
-Purpose: Teach basic tap interaction.
+Purpose: Teach basic tap interaction through repeated success.
 
 Difficulty: Very easy.
 
 ### Stage 2: Forest Apples
 
-Goal: Find 2 apples.
+Goal: Find 3 apples.
 
-Purpose: Introduce multiple targets.
+Purpose: Reinforce visual search with a new familiar target.
 
 Difficulty: Easy.
 
 ### Stage 3: Little Footprints
 
-Goal: Find fox footprints near leaves.
+Goal: Find 3 fox footprints near leaves.
 
 Purpose: Add light visual search.
 
 Difficulty: Easy.
 
-### Stage 4: Shiny Star
+### Stage 4: Pine Cone Dinner
 
-Goal: Find 1 hidden star.
+Goal: Help the squirrel find 3 pine cones in the grass.
 
-Purpose: Introduce treasure discovery.
-
-Difficulty: Easy.
-
-### Stage 5: Butterfly Colors
-
-Goal: Find 3 butterflies that match the shown color.
-
-Purpose: Add target matching.
+Purpose: Add more distractors while keeping the goal familiar.
 
 Difficulty: Medium-low.
 
-### Stage 6: Acorn Hunt
+### Stage 5: Forest Treasure Box
 
-Goal: Find 3 acorns among leaves and mushrooms.
+Goal: Find 3 forest treasure boxes.
 
-Purpose: Increase distractors.
+Purpose: End the adventure with a clear treasure and reward moment.
 
-Difficulty: Medium-low.
-
-### Stage 7: Bee Careful
-
-Goal: Find flowers while bees are present as distractors.
-
-Purpose: Practice ignoring similar or nearby objects.
-
-Difficulty: Medium.
-
-### Stage 8: Listen to 小航
-
-Goal: Find the object 小航 describes.
-
-Purpose: Add instruction-following.
-
-Difficulty: Medium.
-
-### Stage 9: Matching Treasure
-
-Goal: Find the object that matches a picture prompt.
-
-Purpose: Add visual matching.
-
-Difficulty: Medium.
-
-### Stage 10: Forest Treasure Box
-
-Goal: Find the final hidden treasure box.
-
-Purpose: End the story with a satisfying reward.
 
 Difficulty: Medium but forgiving.
 

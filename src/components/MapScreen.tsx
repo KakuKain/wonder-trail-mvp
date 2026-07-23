@@ -47,7 +47,7 @@ export function MapScreen({
                 return <button className={`map-node ${chapter.className} ${chapter.playable ? "map-node-playable" : "map-node-locked"} ${partAcquired ? "map-node-completed" : ""}`} key={chapter.id} type="button" style={{ "--map-x": `${chapter.position.x}%`, "--map-y": `${chapter.position.y}%`, "--map-width": `${chapter.position.width}%` } as CSSProperties} aria-label={`${chapter.place}，零件 ${chapter.part}${partAcquired ? "，已取得" : ""}，${chapter.mechanic}。${chapter.story}`} onClick={() => onChapterSelect(chapter.id, chapter.playable)}>
                   <img className="map-hotspot-image" src={chapter.image} alt="" aria-hidden="true" />
                   <span className="part-badge">{chapter.part}</span>
-                  {partAcquired && <span className="part-status-badge" aria-hidden="true">✓ 已取得</span>}
+                  {partAcquired && <span className="lock-badge part-status-badge" aria-hidden="true"><span>✓</span></span>}
                   {!chapter.playable && <span className="lock-badge" aria-hidden="true">{lockIcon}</span>}
                   <span className="map-node-label"><strong>{chapter.place}</strong></span>
                 </button>;

@@ -27,6 +27,19 @@ function fillCurrentOrder(controller: ReturnType<typeof renderMarketController>)
   return controller.result.current.view.market.question;
 }
 
+function finishFirstForestStage(controller: ReturnType<typeof renderMarketController>) {
+  act(() => controller.result.current.setStageBackgroundReady(true));
+  const targetIds = controller.result.current.objects.filter((object) => object.isTarget).map((object) => object.instanceId);
+
+  targetIds.forEach((instanceId) => {
+    act(() => {
+      const object = controller.result.current.objects.find((item) => item.instanceId === instanceId);
+      if (!object) throw new Error("Expected a forest target");
+      controller.result.current.actions.selectForestObject(object);
+    });
+  });
+}
+
 describe("game controller market timers", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -82,5 +95,19 @@ describe("game controller market timers", () => {
 
     act(() => vi.advanceTimersByTime(1));
     expect(controller.result.current.hintVisible).toBe(true);
+  });
+
+  it("keeps forest replays playable without treating the part as newly acquired", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+
+    act(() => controller.result.current.startStage(0));
+    finishFirstForestStage(controller);
+    expect(controller.result.current.lastCompletionWasNew).toBe(true);
+    expect(controller.result.current.save.stars).toBe(1);
+
+    act(() => controller.result.current.startStage(0));
+    finishFirstForestStage(controller);
+    expect(controller.result.current.lastCompletionWasNew).toBe(false);
+    expect(controller.result.current.save.stars).toBe(1);
   });
 });

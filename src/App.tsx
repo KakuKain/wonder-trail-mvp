@@ -80,7 +80,7 @@ export function App() {
   const {
     save, saveProtectionMode, screen, setScreen, stageIndex, objects,
     hintVisible,
-    reward, eventsOpen, setEventsOpen, events,
+    reward, lastCompletionWasNew, eventsOpen, setEventsOpen, events,
     collectionOpen, setCollectionOpen, collectionPage, setCollectionPage,
     homeMapReady, setHomeMapReady, stageBackgroundReady, setStageBackgroundReady,
     stageBackgroundIndex, marketCompletedDifficulties,
@@ -131,14 +131,18 @@ export function App() {
 
     if (stage.world === "forest" && nextStage?.world !== "forest") {
       setScreen("complete");
-      speak("森林的任務完成，取得飛機零件 A！", {
-        tone: "positive",
-        interrupt: true,
-      });
-      logEvent("chapter_complete", stage.id, {
-        world: stage.world,
-        part: "A",
-      });
+      if (lastCompletionWasNew) {
+        speak("森林的任務完成，取得飛機零件 A！", {
+          tone: "positive",
+          interrupt: true,
+        });
+        logEvent("chapter_complete", stage.id, {
+          world: stage.world,
+          part: "A",
+        });
+      } else {
+        speak("恭喜再次通關！", { tone: "positive", interrupt: true });
+      }
       return;
     }
 
@@ -263,7 +267,7 @@ export function App() {
               background={stageBackground}
               onBackgroundReady={() => setStageBackgroundReady(true)}
               toolbar={<div className="stage-toolbar" aria-label="關卡工具列"><button className="home-fab" type="button" aria-label="回桌面" onClick={actions.returnHome}><HomeIcon /></button>{stage.mechanic === "search" && stage.targets && stage.targetLabel && stage.targetRuby && <div className="stage-hud"><div className="target-pill"><ObjectIcon assetId={stage.targets[0].assetId} compact /><span className="target-action">找找</span><strong><RubyText segments={[{ text: stage.targetLabel, ruby: stage.targetRuby }]} /></strong><small className="count-badge">{foundTargets}/{totalTargets}</small></div></div>}<button className="hint-fab" type="button" aria-label="小航提示" onClick={actions.showHint}><LightbulbIcon /></button></div>}
-              objects={<>{objects.map((object) => <SearchObject key={object.instanceId} object={object} hinted={hintVisible && object.isTarget && !object.found} onSelect={() => actions.selectForestObject(object)} />)}</>}
+              objects={<>{objects.map((object) => <SearchObject key={object.instanceId} object={object} hitboxScale={stage.assist.hitboxScale} hinted={hintVisible && object.isTarget && !object.found} onSelect={() => actions.selectForestObject(object)} />)}</>}
             />
           )}
         </section>
@@ -303,7 +307,7 @@ export function App() {
                 className="collection-action-button collection-next-button"
                 type="button"
                 aria-label={stage.world === "forest" && stages[stageIndex + 1]?.world !== "forest"
-                  ? "取得零件 A"
+                  ? lastCompletionWasNew ? "取得零件 A" : "完成森林冒險"
                   : stageIndex + 1 >= stages.length ? "查看結果" : "下一段森林路"}
                 onClick={continueAdventure}
               >
@@ -344,20 +348,20 @@ export function App() {
               <BookIcon />
             </button>
           </div>}
-          partReward={<div className="complete-part-reward" aria-label="取得飛機零件">
+          partReward={stage.world === "forest" && !lastCompletionWasNew ? (
+            <div className="complete-replay-mark" aria-label="再次通關"><span>✓</span></div>
+          ) : <div className="complete-part-reward" aria-label="取得飛機零件">
             <span className="complete-part-glow" aria-hidden="true" />
             <img src={planePartReward} alt="" aria-hidden="true" />
           </div>}
           caption={<div className="complete-caption">
             <div>
               <HeadingWithAudio
-                segments={dialogue.completeHeadline}
-                speakText="今天的森林書完成囉！"
+                segments={stage.world === "forest" && !lastCompletionWasNew ? ["恭喜再次通關！"] : dialogue.completeHeadline}
+                speakText={stage.world === "forest" && !lastCompletionWasNew ? "恭喜再次通關！" : "今天的森林書完成囉！"}
                 onSpeak={speak}
               />
-              <p>
-                <RubyText segments={dialogue.completeSummary()} />
-              </p>
+              <p><RubyText segments={stage.world === "forest" && !lastCompletionWasNew ? ["小航很開心，再一起找找看吧！"] : dialogue.completeSummary()} /></p>
             </div>
           </div>}
           modal={collectionOpen && (
@@ -652,10 +656,12 @@ function RubyText({ segments }: { segments: RubySegment[] }) {
 
 function SearchObject({
   object,
+  hitboxScale,
   hinted,
   onSelect,
 }: {
   object: PlacedObject;
+  hitboxScale: number;
   hinted: boolean;
   onSelect: () => void;
 }) {
@@ -669,6 +675,7 @@ function SearchObject({
     "--object-opacity": object.opacity,
     "--object-color": asset.color,
     "--object-accent": asset.accent,
+    "--hitbox-inset": `${Math.max(12, Math.round((object.size * (hitboxScale - 1)) / 2))}px`,
   } as CSSProperties;
 
   return (

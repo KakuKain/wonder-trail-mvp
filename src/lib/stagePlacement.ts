@@ -187,9 +187,9 @@ function createSlotCandidate(
 function findDenseFallbackPosition(assetId: string, requestedSize: number, placed: PlacedObject[]) {
   for (let size = Math.min(requestedSize, 48); size >= 44; size -= 2) {
     for (const slot of shuffle(denseSafeSlots)) {
-      const candidate = createSlotCandidate(assetId, size, slot, 0);
+      const candidate = createSlotCandidate(assetId, size, slot, 12);
 
-      if (hasEnoughSpace(candidate, placed, 0)) return candidate;
+      if (hasEnoughSpace(candidate, placed, 12)) return candidate;
     }
   }
 
@@ -200,9 +200,7 @@ function findOpenPosition(assetId: string, requestedSize: number, placed: Placed
   const gapAttempts = [
     placementArea.visualGapPx,
     16,
-    10,
-    4,
-    0,
+    12,
   ];
 
   for (const visualGapPx of gapAttempts) {
@@ -324,4 +322,22 @@ export function createPlacedObjects(stage: StageConfig): PlacedObject[] {
   }
 
   return bestPlacement;
+}
+
+/** Mirrors the touch area used by SearchObject so placement can be regression-tested. */
+export function objectsHaveOverlappingHitboxes(
+  first: Pick<PlacedObject, "size" | "x" | "y">,
+  second: Pick<PlacedObject, "size" | "x" | "y">,
+  hitboxScale: number
+) {
+  const hitboxInset = (size: number) => Math.max(12, Math.round((size * (hitboxScale - 1)) / 2));
+  const footprint = (size: number) => ({
+    width: ((size + hitboxInset(size) * 2) / placementArea.widthPx) * 100,
+    height: ((size + hitboxInset(size) * 2) / placementArea.heightPx) * 100,
+  });
+  const firstFootprint = footprint(first.size);
+  const secondFootprint = footprint(second.size);
+
+  return Math.abs(first.x - second.x) < (firstFootprint.width + secondFootprint.width) / 2
+    && Math.abs(first.y - second.y) < (firstFootprint.height + secondFootprint.height) / 2;
 }

@@ -63,6 +63,7 @@ export function useGameController(totalStages: number) {
     game.setHintsUsed(0);
     game.setHintVisible(false);
     game.setReward(null);
+    game.setLastCompletionWasNew(false);
     game.setMarketDifficulty(initial.marketDifficulty);
     game.setMarketCompletedDifficulties(initial.marketCompletedDifficulties);
     game.setMarketChallengeIndex(initial.marketChallengeIndex);
@@ -95,6 +96,7 @@ export function useGameController(totalStages: number) {
     game.setHintsUsed(0);
     game.setHintVisible(false);
     game.setReward(null);
+    game.setLastCompletionWasNew(false);
     game.setMarketDifficulty(save.marketProgress.activeDifficulty);
     game.setMarketCompletedDifficulties(save.marketProgress.completedDifficulties);
     game.setMarketChallengeIndex(0);
