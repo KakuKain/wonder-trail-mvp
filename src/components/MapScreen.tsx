@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
 type Chapter = {
   id: string;
@@ -33,11 +33,13 @@ export function MapScreen({
   chapters, hasProgress, forestPartAcquired, marketPartAcquired, mapArt, planeArt, characterArt,
   headline, body, replayIcon, lockIcon, onMapReady, onReset, onChapterSelect,
 }: Props) {
+  const [resetConfirmationOpen, setResetConfirmationOpen] = useState(false);
+
   return (
     <section className="chapter-select-screen">
       <div className="chapter-select-copy">
         <div className="island-map" aria-label="零件島地圖">
-          {hasProgress && <button className="map-replay-button" type="button" onClick={onReset} aria-label="重設全部進度" title="重設全部進度">{replayIcon}</button>}
+          {hasProgress && <button className="map-replay-button" type="button" onClick={() => setResetConfirmationOpen(true)} aria-label="重新開始遊戲" title="重新開始遊戲">{replayIcon}</button>}
           <div className="map-scene-frame">
             <img className="island-map-art" src={mapArt} alt="" aria-hidden="true" decoding="async" fetchPriority="high" onLoad={onMapReady} onError={onMapReady} />
             <div className="island-core">
@@ -58,6 +60,16 @@ export function MapScreen({
             <div className="map-guide-character" aria-hidden="true"><img src={characterArt} alt="" /></div>
             <div className="map-story-copy">{headline}{body}</div>
           </div>
+          {resetConfirmationOpen && <div className="reset-confirmation-backdrop" role="presentation">
+            <section className="reset-confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="reset-confirmation-title" aria-describedby="reset-confirmation-copy">
+              <strong id="reset-confirmation-title">要重新開始嗎？</strong>
+              <p id="reset-confirmation-copy">目前找到的零件、星星和市場進度都會清除。</p>
+              <div className="reset-confirmation-actions">
+                <button type="button" onClick={() => setResetConfirmationOpen(false)}>繼續遊玩</button>
+                <button className="reset-confirmation-danger" type="button" onClick={() => { setResetConfirmationOpen(false); onReset(); }}>清除進度</button>
+              </div>
+            </section>
+          </div>}
         </div>
       </div>
     </section>

@@ -16,8 +16,18 @@ const toneSettings: Record<VoiceTone, { pitch: number; rate: number }> = {
 export class VoiceQueue {
   private queue: VoiceItem[] = [];
   private isSpeaking = false;
+  private activeToken = 0;
+  private listeners = new Set<(speaking: boolean) => void>();
   private voice?: SpeechSynthesisVoice;
   private lang = "zh-TW";
+
+  subscribe(listener: (speaking: boolean) => void) {
+    this.listeners.add(listener);
+    listener(this.isSpeaking);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
 
   setVoice(voice?: SpeechSynthesisVoice) {
     this.voice = voice;
@@ -36,8 +46,9 @@ export class VoiceQueue {
 
     if (item.interrupt) {
       this.queue = [];
+      this.activeToken += 1;
       window.speechSynthesis.cancel();
-      this.isSpeaking = false;
+      this.setSpeaking(false);
     }
 
     this.queue.push(item);
@@ -45,10 +56,10 @@ export class VoiceQueue {
   }
 
   cancel() {
-    if (!("speechSynthesis" in window)) return;
     this.queue = [];
-    window.speechSynthesis.cancel();
-    this.isSpeaking = false;
+    this.activeToken += 1;
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    this.setSpeaking(false);
   }
 
   private run() {
@@ -57,7 +68,8 @@ export class VoiceQueue {
     const item = this.queue.shift();
     if (!item) return;
 
-    this.isSpeaking = true;
+    const token = ++this.activeToken;
+    this.setSpeaking(true);
     const utterance = new SpeechSynthesisUtterance(item.text);
     const settings = toneSettings[item.tone];
 
@@ -67,14 +79,22 @@ export class VoiceQueue {
     if (this.voice) utterance.voice = this.voice;
 
     utterance.onend = () => {
-      this.isSpeaking = false;
+      if (token !== this.activeToken) return;
+      this.setSpeaking(false);
       window.setTimeout(() => this.run(), item.delayMs);
     };
     utterance.onerror = () => {
-      this.isSpeaking = false;
+      if (token !== this.activeToken) return;
+      this.setSpeaking(false);
       window.setTimeout(() => this.run(), item.delayMs);
     };
 
     window.speechSynthesis.speak(utterance);
+  }
+
+  private setSpeaking(speaking: boolean) {
+    if (this.isSpeaking === speaking) return;
+    this.isSpeaking = speaking;
+    this.listeners.forEach((listener) => listener(speaking));
   }
 }

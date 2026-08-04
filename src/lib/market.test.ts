@@ -1,10 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { isMarketDifficultyUnlocked, marketAnswerOptions, marketBasketMatches, marketQuestionValue, marketRequiredCount, marketTotal, randomizeMarketChallenge } from "./market";
+import { marketCustomerForRound, marketCustomers } from "../data/marketCustomers";
+import { stages } from "../data/stages";
+import { isMarketDifficultyUnlocked, marketAnswerOptions, marketBasketMatches, marketCalculationTerms, marketChallengeFitsDifficulty, marketCustomerReminder, marketQuantityPrompt, marketQuestionValue, marketRequiredCount, marketTotal, randomizeMarketChallenge } from "./market";
 import type { MarketChallengeConfig } from "../types";
 
 const challenge: MarketChallengeConfig = { id: "test", difficulty: "intermediate", customerName: "小鹿", customerRuby: "", requestText: "", requestRuby: [], order: [{ assetId: "apple", count: 2 }, { assetId: "mushroom", count: 1 }], prices: { apple: 2, mushroom: 3 } };
 
 describe("market rules", () => {
+  it("attributes a first-person order to the animal customer in hints", () => {
+    expect(marketCustomerReminder("小羊", "我想買 2 顆松果。")).toBe("小羊想買 2 顆松果。");
+    expect(marketCustomerReminder("小鹿", "請幫我拿蘋果。")).toBe("小鹿說，請幫我拿蘋果。");
+  });
+
+  it("provides ten distinct customers and keeps each round assignment stable", () => {
+    expect(marketCustomers).toHaveLength(10);
+    expect(new Set(marketCustomers.map((customer) => customer.id)).size).toBe(10);
+    expect(marketCustomerForRound("beginner", 1).id).toBe("deer");
+    expect(marketCustomerForRound("beginner", 1)).toBe(marketCustomerForRound("beginner", 1));
+  });
+
   it("calculates totals and quantity-recognition answers", () => {
     expect(marketTotal(challenge)).toBe(7);
     expect(marketQuestionValue(challenge, "addition")).toBe(7);
@@ -12,14 +26,47 @@ describe("market rules", () => {
     expect(marketAnswerOptions(1, "one")).toEqual(expect.arrayContaining([1, 2, 3]));
   });
 
-  it("creates deterministic orders that obey each difficulty range", () => {
+  it("describes a beginner quantity question with the item's natural counter", () => {
+    expect(marketQuantityPrompt({ ...challenge, order: [{ assetId: "acorn", count: 3 }] })).toBe("籃子裡有幾顆橡果？");
+    expect(marketQuantityPrompt({ ...challenge, order: [{ assetId: "pink_flower", count: 2 }] })).toBe("籃子裡有幾朵粉紅花？");
+    expect(marketQuantityPrompt(challenge)).toBe("籃子裡一共有幾個商品？");
+  });
+
+  it("creates deterministic orders that stay inside every age range", () => {
     const beginner = randomizeMarketChallenge({ ...challenge, difficulty: "beginner" }, 42);
     const repeated = randomizeMarketChallenge({ ...challenge, difficulty: "beginner" }, 42);
     expect(beginner).toEqual(repeated);
-    expect(beginner.order).toHaveLength(1);
-    expect(beginner.order[0].count).toBeGreaterThanOrEqual(1);
-    expect(beginner.order[0].count).toBeLessThanOrEqual(3);
     expect(beginner.requestText).toMatch(/^我想買 /);
+
+    for (const difficulty of ["beginner", "intermediate", "advanced", "boss"] as const) {
+      for (let seed = 0; seed < 100; seed += 1) {
+        expect(marketChallengeFitsDifficulty(randomizeMarketChallenge({ ...challenge, difficulty }, seed))).toBe(true);
+      }
+    }
+  });
+
+  it("expands addition into one visible term per item and reserves multiplication for the boss", () => {
+    const additionTerms = marketCalculationTerms(challenge, "addition");
+    expect(additionTerms).toHaveLength(3);
+    expect(additionTerms.every((term) => term.count === 1)).toBe(true);
+    expect(additionTerms.map((term) => term.price)).toEqual([2, 2, 3]);
+
+    const bossTerms = marketCalculationTerms(challenge, "challenge");
+    expect(bossTerms).toEqual([
+      expect.objectContaining({ assetId: "apple", count: 2, price: 2 }),
+      expect.objectContaining({ assetId: "mushroom", count: 1, price: 3 }),
+    ]);
+  });
+
+  it("keeps every authored order and question mode appropriate for its age label", () => {
+    const marketPuzzle = stages.find((stage) => stage.mechanic === "market")?.marketPuzzle;
+    expect(marketPuzzle?.difficulties.map(({ id, questionMode }) => [id, questionMode])).toEqual([
+      ["beginner", "number-recognition"],
+      ["intermediate", "addition"],
+      ["advanced", "multi-addition"],
+      ["boss", "challenge"],
+    ]);
+    expect(marketPuzzle?.challenges.every(marketChallengeFitsDifficulty)).toBe(true);
   });
 
   it("unlocks a difficulty only after its prerequisite", () => {

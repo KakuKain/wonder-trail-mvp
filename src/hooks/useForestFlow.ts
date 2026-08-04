@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { forestBackgrounds } from "../data/backgrounds";
 import { pickScript, voiceScripts } from "../data/voiceScripts";
 import { stages } from "../data/stages";
-import { completeStageSave, selectForestTarget } from "../lib/gameFlow";
+import { completeStageSave, forestRewardCopy, selectForestTarget } from "../lib/gameFlow";
 import type { GameEvent, PlacedObject, SaveData } from "../types";
 import { VoiceQueue } from "../lib/voiceEngine";
 import { useGameState } from "./useGameState";
@@ -29,6 +29,7 @@ export function useForestFlow({ game, logEvent, speak, persistSave }: Props) {
     const reward = currentStage.reward;
     const completionWasNew = !sourceSave.completedStageIds.includes(currentStage.id);
     const nextSave = completeStageSave(sourceSave, currentStage.id, reward, new Date().toISOString());
+    const rewardCopy = forestRewardCopy(currentStage.targetLabel ?? "寶物", completionWasNew);
 
     game.setObjects(nextObjects);
     if (!persistSave(nextSave)) return undefined;
@@ -41,10 +42,10 @@ export function useForestFlow({ game, logEvent, speak, persistSave }: Props) {
         return (currentIndex + offset) % forestBackgrounds.length;
       });
     }
-    speak(pickScript(voiceScripts.reward, game.stageIndex), { tone: "positive", interrupt: true });
-    speak(currentStage.mechanic === "market" ? "小航取得了市場的零件。" : "小航把寶物收進森林書。", { tone: "neutral", delayMs: 500 });
+    speak(completionWasNew ? pickScript(voiceScripts.reward, game.stageIndex) : rewardCopy.headline, { tone: "positive", interrupt: true });
+    speak(rewardCopy.detail, { tone: "neutral", delayMs: 500 });
     logEvent("stage_finish", currentStage.id, { durationMs, wrongClicks: game.wrongClicks, hintsUsed: game.hintsUsed, difficulty: currentStage.difficulty });
-    logEvent("reward_claimed", currentStage.id, reward);
+    if (completionWasNew) logEvent("reward_claimed", currentStage.id, reward);
     return nextSave;
   }, [game, logEvent, persistSave, speak]);
 

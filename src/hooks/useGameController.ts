@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { xiaohangVoicePreference } from "../data/voice";
 import { stages } from "../data/stages";
 import { getStageInitialState } from "../lib/gameFlow";
+import { clearMarketRoundSession, clearMarketStorySeen, hasSeenMarketStory } from "../lib/marketSession";
 import { appendEvent, getSaveProtectionMode, loadEvents, loadSave, resetSave, writeSave } from "../lib/storage";
 import { createPlacedObjects } from "../lib/stagePlacement";
 import type { GameEvent, SaveData } from "../types";
@@ -10,12 +11,35 @@ import { useForestFlow } from "./useForestFlow";
 import { useGameState } from "./useGameState";
 import { useMarketFlow } from "./useMarketFlow";
 
+const voiceMutedStorageKey = "wonder-trail:voice-muted";
+
+function loadVoiceMutedPreference() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(voiceMutedStorageKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeVoiceMutedPreference(muted: boolean) {
+  try {
+    window.localStorage.setItem(voiceMutedStorageKey, String(muted));
+  } catch {
+    // Voice controls should remain usable when storage is unavailable.
+  }
+}
+
 /** Assembles state, shared services, and the forest/market flow boundaries. */
 export function useGameController(totalStages: number) {
   const game = useGameState();
   const { setEvents, setVoices } = game;
   const sessionId = useRef(`session-${Date.now()}`);
   const voiceQueue = useRef(new VoiceQueue());
+  const [voiceSpeaking, setVoiceSpeaking] = useState(false);
+  const [voiceSupported] = useState(() => typeof window !== "undefined" && "speechSynthesis" in window);
+  const [voiceMuted, setVoiceMuted] = useState(loadVoiceMutedPreference);
+  const voiceMutedRef = useRef(voiceMuted);
   const selectedVoice = useMemo(() => pickXiaohangVoice(game.voices), [game.voices]);
 
   const logEvent = useCallback((event: GameEvent["event"], stageId?: string, payload?: Record<string, unknown>) => {
@@ -24,9 +48,21 @@ export function useGameController(totalStages: number) {
   }, [setEvents]);
 
   const speak = useCallback((text: string, options?: Parameters<VoiceQueue["speak"]>[1]) => {
+    if (voiceMutedRef.current) return;
     voiceQueue.current.speak(text, options);
   }, []);
   const cancelSpeech = useCallback(() => voiceQueue.current.cancel(), []);
+  const toggleVoice = useCallback(() => {
+    const nextMuted = !voiceMutedRef.current;
+    voiceMutedRef.current = nextMuted;
+    setVoiceMuted(nextMuted);
+    writeVoiceMutedPreference(nextMuted);
+    if (nextMuted) {
+      voiceQueue.current.cancel();
+      return;
+    }
+    voiceQueue.current.speak("聲音已開啟。", { tone: "positive", interrupt: true, delayMs: 0 });
+  }, []);
 
   const persistSave = useCallback((save: SaveData) => {
     if (!writeSave(save)) {
@@ -39,10 +75,10 @@ export function useGameController(totalStages: number) {
   }, [game, speak]);
 
   const forest = useForestFlow({ game, logEvent, speak, persistSave });
-  const market = useMarketFlow({ game, logEvent, speak, persistSave, completeStage: forest.completeStage });
+  const market = useMarketFlow({ game, logEvent, speak, persistSave });
   const { completeStage, selectForestObject, showForestHint, stageStartedAt } = forest;
   const { clearMarketTimers, view: marketView, actions: marketActions } = market;
-  const { answerMarket, selectMarketDifficulty, selectMarketItem, showMarketHint } = marketActions;
+  const { answerMarket, selectMarketDifficulty, selectMarketItem, showMarketHint, startMarketShift } = marketActions;
   const stage = stages[game.stageIndex];
 
   const startStage = useCallback((index: number) => {
@@ -68,7 +104,10 @@ export function useGameController(totalStages: number) {
     game.setMarketCompletedDifficulties(initial.marketCompletedDifficulties);
     game.setMarketChallengeIndex(initial.marketChallengeIndex);
     game.setMarketRoundSeed(Date.now() + Math.random());
-    game.setMarketPhase("pick");
+    const shouldShowMarketStory = nextStage.mechanic === "market"
+      && !hasSeenMarketStory()
+      && !game.save.completedStageIds.includes(nextStage.id);
+    game.setMarketPhase(shouldShowMarketStory ? "story" : "pick");
     game.setMarketBasket({});
     game.setMarketSelectedTotal(null);
     game.setMarketFeedback("");
@@ -85,6 +124,8 @@ export function useGameController(totalStages: number) {
   const resetProgress = useCallback(() => {
     clearMarketTimers();
     cancelSpeech();
+    clearMarketRoundSession();
+    clearMarketStorySeen();
     resetSave();
     const save = loadSave();
     game.setSave(save);
@@ -133,6 +174,7 @@ export function useGameController(totalStages: number) {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [logEvent, totalStages]);
   useEffect(() => { voiceQueue.current.setVoice(selectedVoice); }, [selectedVoice]);
+  useEffect(() => voiceQueue.current.subscribe(setVoiceSpeaking), []);
   useEffect(() => {
     if (!("speechSynthesis" in window)) return undefined;
     const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
@@ -149,6 +191,7 @@ export function useGameController(totalStages: number) {
     progress: { completedStageCount, totalStages, percent: Math.round((completedStageCount / totalStages) * 100) },
     market: marketView,
     collection: { open: game.collectionOpen, page: game.collectionPage },
+    voice: { supported: voiceSupported, speaking: voiceSpeaking, muted: voiceMuted },
   };
   const actions = {
     startForest: () => startWorld("forest"),
@@ -159,9 +202,11 @@ export function useGameController(totalStages: number) {
     selectForestObject,
     showForestHint,
     showHint,
+    startMarketShift,
     selectMarketDifficulty,
     selectMarketItem,
     answerMarket,
+    toggleVoice,
     returnHome,
   };
 

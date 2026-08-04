@@ -1,20 +1,18 @@
 import { defaultSave } from "./storage";
-import { isMarketDifficultyUnlocked } from "./market";
+import { isMarketDifficultyUnlocked, marketCustomersPerShift } from "./market";
 import type { MarketDifficultyConfig, MarketDifficultyId, MarketProgress, PlacedObject, RewardConfig, SaveData, StageConfig } from "../types";
 
 export function getStageInitialState(stage: StageConfig, progress: MarketProgress) {
   const marketDifficulty = stage.marketPuzzle?.difficulties.find((item) =>
     item.id === progress.activeDifficulty && isMarketDifficultyUnlocked(item, progress.completedDifficulties)
   )?.id ?? stage.marketPuzzle?.difficulties[0]?.id ?? "beginner";
-  const challengeCount = stage.marketPuzzle?.challenges.filter((item) => item.difficulty === marketDifficulty).length ?? 0;
-
   return {
     stageBackgroundReady: stage.mechanic !== "search",
     marketDifficulty,
     marketCompletedDifficulties: progress.completedDifficulties,
     marketChallengeIndex: Math.min(
       progress.nextChallengeByDifficulty[marketDifficulty] ?? 0,
-      Math.max(0, challengeCount - 1)
+      marketCustomersPerShift - 1
     ),
   };
 }
@@ -44,6 +42,22 @@ export function completeStageSave(save: SaveData, stageId: string, reward: Rewar
     stars: save.stars + (alreadyCompleted ? 0 : reward.stars),
     lastPlayedAt: now,
   };
+}
+
+export function forestRewardCopy(assetLabel: string, completionWasNew: boolean) {
+  return completionWasNew
+    ? {
+        collectionAria: `收進圖鑑：${assetLabel}`,
+        eyebrow: "收進圖鑑",
+        headline: "成功取得寶物！",
+        detail: `${assetLabel}已收進圖鑑。`,
+      }
+    : {
+        collectionAria: `已在圖鑑裡：${assetLabel}`,
+        eyebrow: "已在圖鑑裡",
+        headline: "再次完成關卡！",
+        detail: `${assetLabel}已在圖鑑裡。`,
+      };
 }
 
 export function advanceMarketProgress(

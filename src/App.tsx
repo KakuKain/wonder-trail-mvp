@@ -6,11 +6,13 @@ import { forestBackgrounds } from "./data/backgrounds";
 import { dialogue } from "./data/dialogue";
 import { stages } from "./data/stages";
 import { useGameController } from "./hooks/useGameController";
+import { forestRewardCopy } from "./lib/gameFlow";
 import { MapScreen } from "./components/screens/MapScreen";
 import { CollectionBookModal } from "./components/screens/CollectionBookModal";
 import { CompleteScreen } from "./components/screens/CompleteScreen";
 import { ForestStage } from "./components/screens/ForestStage";
 import { MarketStage } from "./components/screens/MarketStage";
+import { preloadMarketStoryAssets } from "./components/screens/marketStoryAssets";
 import { RewardScreen } from "./components/screens/RewardScreen";
 import type {
   AssetDefinition,
@@ -90,11 +92,14 @@ export function App() {
     puzzle: marketPuzzle,
     difficulties: marketDifficulties,
     challenge: marketChallenge,
+    customer: marketCustomer,
     question: currentMarketQuestionValue,
     answerChoices: currentMarketAnswerOptions,
   } = view.market;
 
   const stage = stages[stageIndex];
+  const rewardAssetId = reward?.stickers[0] ?? stage.targets?.[0]?.assetId ?? "pine_cone";
+  const rewardPresentation = forestRewardCopy(assets[rewardAssetId].label, lastCompletionWasNew);
   const stageBackground = forestBackgrounds[stageBackgroundIndex % forestBackgrounds.length];
   const foundTargets = objects.filter((object) => object.isTarget && object.found).length;
   const totalTargets = objects.filter((object) => object.isTarget).length;
@@ -156,6 +161,10 @@ export function App() {
     }
     startStage(nextIndex);
   }
+
+  useEffect(() => {
+    preloadMarketStoryAssets();
+  }, []);
 
   useEffect(() => {
     const canPreload = screen === "reward" || (screen === "intro" && homeMapReady);
@@ -233,6 +242,8 @@ export function App() {
           {stage.mechanic === "market" && marketPuzzle && marketChallenge ? (
             <MarketStage
               challenge={marketChallenge}
+              customer={marketCustomer}
+              completionWasNew={lastCompletionWasNew}
               currencyIntroText={marketPuzzle.currencyIntroText}
               currencyIntroRuby={marketPuzzle.currencyIntroRuby}
               showCurrencyIntro={save.marketProgress.completedChallengeIds.length === 0}
@@ -248,14 +259,19 @@ export function App() {
               hintVisible={hintVisible}
               renderObjectIcon={(assetId, compact) => <ObjectIcon assetId={assetId} compact={compact} />}
               renderRubyText={(segments) => <RubyText segments={segments} />}
-              renderHeading={(segments, text, audioLabel) => <HeadingWithAudio segments={segments} speakText={text} onSpeak={speak} audioLabel={audioLabel} />}
               homeIcon={<HomeIcon />}
               hintIcon={<LightbulbIcon />}
               lockIcon={<LockIcon />}
               speakerIcon={<SpeakerIcon />}
+              voiceSupported={view.voice.supported}
+              voiceSpeaking={view.voice.speaking}
+              voiceMuted={view.voice.muted}
               onHome={actions.returnHome}
               onHint={actions.showHint}
               onSpeak={speak}
+              onVoiceToggle={actions.toggleVoice}
+              onStoryStart={actions.startMarketShift}
+              onReplay={actions.startMarketShift}
               onDifficultySelect={actions.selectMarketDifficulty}
               onItemSelect={actions.selectMarketItem}
               onAnswerSelect={actions.answerMarket}
@@ -266,7 +282,7 @@ export function App() {
               ready={stageBackgroundReady}
               background={stageBackground}
               onBackgroundReady={() => setStageBackgroundReady(true)}
-              toolbar={<div className="stage-toolbar" aria-label="關卡工具列"><button className="home-fab" type="button" aria-label="回桌面" onClick={actions.returnHome}><HomeIcon /></button>{stage.mechanic === "search" && stage.targets && stage.targetLabel && stage.targetRuby && <div className="stage-hud"><div className="target-pill"><ObjectIcon assetId={stage.targets[0].assetId} compact /><span className="target-action">找找</span><strong><RubyText segments={[{ text: stage.targetLabel, ruby: stage.targetRuby }]} /></strong><small className="count-badge">{foundTargets}/{totalTargets}</small></div></div>}<button className="hint-fab" type="button" aria-label="小航提示" onClick={actions.showHint}><LightbulbIcon /></button></div>}
+              toolbar={<div className="stage-toolbar" aria-label="關卡工具列"><button className="home-fab" type="button" aria-label="回桌面" onClick={actions.returnHome}><HomeIcon /></button>{stage.mechanic === "search" && stage.targets && stage.targetLabel && stage.targetRuby && <div className="stage-hud"><div className="target-pill"><ObjectIcon assetId={stage.targets[0].assetId} compact /><span className="target-action">找找</span><strong><RubyText segments={[{ text: stage.targetLabel, ruby: stage.targetRuby }]} /></strong><small className="count-badge">{foundTargets}/{totalTargets}</small></div></div>}<button className="hint-fab" type="button" aria-label="小航提示" aria-pressed={hintVisible} onClick={actions.showHint}><LightbulbIcon /></button></div>}
               objects={<>{objects.map((object) => <SearchObject key={object.instanceId} object={object} hitboxScale={stage.assist.hitboxScale} hinted={hintVisible && object.isTarget && !object.found} onSelect={() => actions.selectForestObject(object)} />)}</>}
             />
           )}
@@ -288,15 +304,15 @@ export function App() {
               <BookIcon />
             </button>
           </div>}
-          unlock={<div className="collection-unlock" aria-label={`收進圖鑑：${assets[reward.stickers[0] ?? stage.targets?.[0]?.assetId ?? "pine_cone"].label}`}>
+          unlock={<div className="collection-unlock" aria-label={rewardPresentation.collectionAria}>
             <div className="collection-unlock-glow" aria-hidden="true" />
-            <ObjectIcon assetId={reward.stickers[0] ?? stage.targets?.[0]?.assetId ?? "pine_cone"} />
+            <ObjectIcon assetId={rewardAssetId} />
           </div>}
           caption={<div className="collection-reward-caption">
-            <p className="eyebrow">收進圖鑑</p>
+            <p className="eyebrow">{rewardPresentation.eyebrow}</p>
             <HeadingWithAudio
-              segments={dialogue.rewardHeadline}
-              speakText="成功取得寶物！"
+              segments={lastCompletionWasNew ? dialogue.rewardHeadline : [rewardPresentation.headline]}
+              speakText={rewardPresentation.headline}
               onSpeak={speak}
             />
             <div className="collection-reward-actions">

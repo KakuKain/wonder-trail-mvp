@@ -55,6 +55,15 @@ export type MarketOrderLine = {
 
 export type MarketDifficultyId = "beginner" | "intermediate" | "advanced" | "boss";
 export type MarketQuestionMode = "number-recognition" | "addition" | "multi-addition" | "challenge";
+export type MarketCustomerId = "rabbit" | "deer" | "squirrel" | "bear" | "lamb" | "cat" | "beaver" | "dog" | "fox" | "owl";
+
+export type MarketCustomerConfig = {
+  id: MarketCustomerId;
+  name: string;
+  ruby: string;
+  image: string;
+  imageAlt: string;
+};
 
 export type MarketDifficultyConfig = {
   id: MarketDifficultyId;

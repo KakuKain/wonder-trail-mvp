@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { assets } from "../data/assets";
+import { marketCustomerForRound } from "../data/marketCustomers";
 import { voiceScripts } from "../data/voiceScripts";
 import { stages } from "../data/stages";
-import { advanceMarketProgress, selectMarketDifficulty as getMarketDifficultySelection } from "../lib/gameFlow";
-import { marketAnswerOptions, marketBasketMatches, marketQuestionValue, marketRequiredCount, randomizeMarketChallenge } from "../lib/market";
-import type { GameEvent, MarketDifficultyId, SaveData } from "../types";
+import { advanceMarketProgress, completeStageSave, selectMarketDifficulty as getMarketDifficultySelection } from "../lib/gameFlow";
+import { marketAnswerOptions, marketBasketMatches, marketCustomerReminder, marketCustomersPerShift, marketQuantityPrompt, marketQuestionValue, marketRequiredCount, marketSuccessDelayMs, randomizeMarketChallenge } from "../lib/market";
+import { markMarketStorySeen } from "../lib/marketSession";
+import type { GameEvent, MarketDifficultyId, MarketQuestionMode, SaveData } from "../types";
 import { VoiceQueue } from "../lib/voiceEngine";
 import { useGameState } from "./useGameState";
 
@@ -17,10 +19,32 @@ type Props = {
   logEvent: LogEvent;
   speak: Speak;
   persistSave: (save: SaveData) => boolean;
-  completeStage: (objects?: GameState["objects"], sourceSave?: SaveData) => SaveData | undefined;
 };
 
-export function useMarketFlow({ game, logEvent, speak, persistSave, completeStage }: Props) {
+const marketQuestionCopy: Record<MarketQuestionMode, { prompt: string; hint: string; retry: string }> = {
+  "number-recognition": {
+    prompt: "數一數，籃子裡有幾個商品？",
+    hint: "用手指一個一個數，看看籃子裡有幾個商品。",
+    retry: "再用手指一個一個數一次。",
+  },
+  addition: {
+    prompt: "看看兩件商品，把兩個價錢加起來。",
+    hint: "先看第一個價錢，再接著加上第二個價錢。",
+    retry: "再把兩個價錢慢慢加一次。",
+  },
+  "multi-addition": {
+    prompt: "看看三件商品，把三個價錢加起來。",
+    hint: "先算前兩個價錢，再加上第三個價錢。",
+    retry: "先算兩個，再加上最後一個。",
+  },
+  challenge: {
+    prompt: "魔王關來了，算算看這些商品總共幾貝。",
+    hint: "相同商品可以先分組計算，再把不同商品加起來。",
+    retry: "先算相同商品，再把每一組加起來。",
+  },
+};
+
+export function useMarketFlow({ game, logEvent, speak, persistSave }: Props) {
   const marketHintTimer = useRef<number | null>(null);
   const marketFinishTimer = useRef<number | null>(null);
   const stage = stages[game.stageIndex];
@@ -28,11 +52,17 @@ export function useMarketFlow({ game, logEvent, speak, persistSave, completeStag
   const marketDifficulties = useMemo(() => marketPuzzle?.difficulties ?? [], [marketPuzzle]);
   const activeDifficulty = marketDifficulties.find((item) => item.id === game.marketDifficulty);
   const challenges = useMemo(() => marketPuzzle?.challenges.filter((item) => item.difficulty === game.marketDifficulty) ?? [], [game.marketDifficulty, marketPuzzle]);
-  const challengeTemplate = challenges[game.marketChallengeIndex];
+  const challengeTemplate = challenges.length > 0 ? challenges[game.marketChallengeIndex % challenges.length] : undefined;
   const challenge = useMemo(() => challengeTemplate ? randomizeMarketChallenge(challengeTemplate, game.marketRoundSeed) : undefined, [challengeTemplate, game.marketRoundSeed]);
+  const customer = useMemo(() => marketCustomerForRound(game.marketDifficulty, game.marketChallengeIndex), [game.marketChallengeIndex, game.marketDifficulty]);
   const question = challenge && activeDifficulty ? marketQuestionValue(challenge, activeDifficulty.questionMode) : 0;
   const answerChoices = useMemo(() => marketAnswerOptions(question, challenge?.id ?? "market"), [challenge?.id, question]);
-  const hintText = challenge ? game.marketPhase === "pick" ? challenge.requestText : activeDifficulty?.questionMode === "number-recognition" ? "數一數，籃子裡有幾個商品。" : "看價格牌，把商品價錢加起來。" : stage.instructionText;
+  const questionCopy = marketQuestionCopy[activeDifficulty?.questionMode ?? "number-recognition"];
+  const hintText = challenge
+    ? game.marketPhase === "pick"
+      ? marketCustomerReminder(customer.name, challenge.requestText)
+      : questionCopy.hint
+    : stage.instructionText;
   const { hintVisible, screen, setHintVisible, setHintsUsed } = game;
 
   const clearMarketTimers = useCallback(() => {
@@ -59,9 +89,19 @@ export function useMarketFlow({ game, logEvent, speak, persistSave, completeStag
     return persistSave(nextSave) ? nextSave : undefined;
   }, [game.save, persistSave]);
 
+  const startMarketShift = useCallback(() => {
+    markMarketStorySeen();
+    resetMarketRound(game.save.marketProgress.nextChallengeByDifficulty[game.marketDifficulty] ?? 0);
+    speak("兔子老闆娘放心出門了。客人來了，開始幫忙吧！", { tone: "positive", interrupt: true });
+  }, [game.marketDifficulty, game.save.marketProgress.nextChallengeByDifficulty, resetMarketRound, speak]);
+
   const selectMarketDifficulty = useCallback((difficultyId: MarketDifficultyId) => {
     const difficulty = marketDifficulties.find((item) => item.id === difficultyId);
     if (!difficulty) return;
+    if (game.marketPhase !== "pick") {
+      speak("先完成這一題，再換關卡喔。", { tone: "soft", interrupt: true });
+      return;
+    }
     const selection = getMarketDifficultySelection(game.save.marketProgress, difficulty);
     if (!selection.unlocked) {
       speak(`${difficulty.label}還沒開放喔。`, { tone: "soft", interrupt: true });
@@ -70,25 +110,38 @@ export function useMarketFlow({ game, logEvent, speak, persistSave, completeStag
     if (!persistMarketProgress(selection.progress)) return;
     resetMarketRound(selection.challengeIndex, difficultyId);
     speak(`${difficulty.label}開始。`, { tone: "neutral", interrupt: true });
-  }, [game.save.marketProgress, marketDifficulties, persistMarketProgress, resetMarketRound, speak]);
+  }, [game.marketPhase, game.save.marketProgress, marketDifficulties, persistMarketProgress, resetMarketRound, speak]);
 
   const finishMarketChallenge = useCallback(() => {
     if (!marketPuzzle || !challenge) return;
-    const nextMarket = advanceMarketProgress(game.save.marketProgress, game.marketDifficulty, challenge.id, game.marketChallengeIndex, challenges.length);
+    const nextMarket = advanceMarketProgress(game.save.marketProgress, game.marketDifficulty, challenge.id, game.marketChallengeIndex, marketCustomersPerShift);
     if (nextMarket.completedDifficulty) {
       game.setMarketCompletedDifficulties(nextMarket.progress.completedDifficulties);
-      const nextSave: SaveData = { ...game.save, marketProgress: nextMarket.progress, lastPlayedAt: new Date().toISOString() };
+      const completionWasNew = !game.save.completedStageIds.includes(stage.id);
+      const nextSave = completeStageSave(
+        { ...game.save, marketProgress: nextMarket.progress },
+        stage.id,
+        stage.reward,
+        new Date().toISOString(),
+      );
       const label = activeDifficulty?.label ?? "這個難度";
-      game.setMarketFeedback(`${label}完成，市場阿姨把零件交給小航！`);
-      speak(`${label}完成，取得市場的零件了！`, { tone: "positive", interrupt: true });
+      if (!persistSave(nextSave)) return;
       clearMarketTimers();
-      completeStage(game.objects, nextSave);
+      game.setMarketChallengeIndex(nextMarket.nextChallengeIndex);
+      game.setMarketBasket({});
+      game.setMarketSelectedTotal(null);
+      game.setMarketPhase("complete");
+      game.setLastCompletionWasNew(completionWasNew);
+      game.setMarketFeedback(completionWasNew ? `${label}完成！兔子老闆娘要把零件送給你。` : `${label}再次完成，客人們都順利結帳了！`);
+      speak(completionWasNew ? "謝謝小航幫忙顧攤位！這個飛機零件送給你！" : "謝謝小航！客人們都順利結帳了！", { tone: "positive", interrupt: true });
+      logEvent("stage_finish", stage.id, { wrongClicks: game.wrongClicks, hintsUsed: game.hintsUsed, difficulty: game.marketDifficulty });
+      if (completionWasNew) logEvent("reward_claimed", stage.id, stage.reward);
       return;
     }
     if (!persistMarketProgress(nextMarket.progress)) return;
     resetMarketRound(nextMarket.nextChallengeIndex);
     speak("完成一位客人囉，下一位來了。", { tone: "positive", interrupt: true });
-  }, [activeDifficulty?.label, challenge, challenges.length, clearMarketTimers, completeStage, game, marketPuzzle, persistMarketProgress, resetMarketRound, speak]);
+  }, [activeDifficulty?.label, challenge, clearMarketTimers, game, logEvent, marketPuzzle, persistMarketProgress, persistSave, resetMarketRound, speak, stage.id, stage.reward]);
 
   const selectMarketItem = useCallback((assetId: string) => {
     if (!challenge || game.screen !== "stage" || stage.mechanic !== "market" || game.marketPhase !== "pick") return;
@@ -113,49 +166,70 @@ export function useMarketFlow({ game, logEvent, speak, persistSave, completeStag
       speak("收到。", { tone: "positive", interrupt: true });
       return;
     }
-    const nextPrompt = activeDifficulty?.questionMode === "number-recognition" ? "數一數，籃子裡有幾個商品？" : "算算看，這些商品總共幾貝？";
+    const questionMode = activeDifficulty?.questionMode ?? "number-recognition";
+    const nextPrompt = questionMode === "number-recognition" ? marketQuantityPrompt(challenge) : marketQuestionCopy[questionMode].prompt;
     game.setMarketPhase("total");
     game.setMarketSelectedTotal(null);
-    game.setMarketFeedback(nextPrompt);
+    game.setMarketFeedback("");
     speak(nextPrompt, { tone: "neutral", interrupt: true });
   }, [activeDifficulty?.questionMode, challenge, game, logEvent, speak, stage.id, stage.mechanic]);
 
   const answerMarket = useCallback((value: number) => {
     if (!challenge || game.screen !== "stage" || stage.mechanic !== "market" || game.marketPhase !== "total") return;
+    if (marketFinishTimer.current !== null) return;
     game.setMarketSelectedTotal(value);
     if (value !== question) {
-      const retryText = activeDifficulty?.questionMode === "number-recognition" ? "再數一次籃子裡的商品。" : "再看一次價格牌，重新算算看。";
+      const retryText = marketQuestionCopy[activeDifficulty?.questionMode ?? "number-recognition"].retry;
       game.setMarketFeedback(retryText);
       game.setWrongClicks((count) => count + 1);
       logEvent("wrong_click", stage.id, { selectedTotal: value, correctTotal: question, mode: "market_total" });
       speak(`差一點點，${retryText}`, { tone: "soft", interrupt: true });
       return;
     }
-    game.setMarketFeedback("算對了，結帳完成！");
-    speak("算對了，結帳完成！", { tone: "positive", interrupt: true });
+    const successText = activeDifficulty?.questionMode === "number-recognition"
+      ? `謝謝小航！一共有 ${question} 個，你數對了！`
+      : `謝謝小航！一共 ${question} 貝，你算對了！`;
+    game.setMarketFeedback(successText);
+    speak(successText, { tone: "positive", interrupt: true });
     if (marketFinishTimer.current !== null) window.clearTimeout(marketFinishTimer.current);
-    marketFinishTimer.current = window.setTimeout(() => { marketFinishTimer.current = null; finishMarketChallenge(); }, 550);
+    marketFinishTimer.current = window.setTimeout(() => { marketFinishTimer.current = null; finishMarketChallenge(); }, marketSuccessDelayMs);
   }, [activeDifficulty?.questionMode, challenge, finishMarketChallenge, game, logEvent, question, speak, stage.id, stage.mechanic]);
 
   const showMarketHint = useCallback((reason: "market" | "timer" = "market") => {
-    if (!challenge || screen !== "stage" || stage.mechanic !== "market") return;
+    if (!challenge || screen !== "stage" || stage.mechanic !== "market" || (game.marketPhase !== "pick" && game.marketPhase !== "total")) return;
     if (marketHintTimer.current !== null) window.clearTimeout(marketHintTimer.current);
     setHintVisible(true);
     setHintsUsed((value) => value + 1);
     marketHintTimer.current = window.setTimeout(() => { setHintVisible(false); marketHintTimer.current = null; }, 1800);
-    speak(`${voiceScripts.hintPrefix}${hintText}`, { tone: "neutral", interrupt: true });
+    const hintPrefix = game.marketPhase === "pick" ? "小航提醒你，" : voiceScripts.hintPrefix;
+    speak(`${hintPrefix}${hintText}`, { tone: "neutral", interrupt: true });
     logEvent("hint_show", stage.id, { reason });
-  }, [challenge, hintText, logEvent, screen, setHintVisible, setHintsUsed, speak, stage.id, stage.mechanic]);
+  }, [challenge, game.marketPhase, hintText, logEvent, screen, setHintVisible, setHintsUsed, speak, stage.id, stage.mechanic]);
 
   useEffect(() => {
-    if (screen !== "stage" || stage.mechanic !== "market" || hintVisible || !challenge) return undefined;
+    if (screen !== "stage" || stage.mechanic !== "market" || (game.marketPhase !== "pick" && game.marketPhase !== "total") || hintVisible || !challenge) return undefined;
     const timer = window.setTimeout(() => showMarketHint("timer"), stage.assist.hintDelayMs);
     return () => window.clearTimeout(timer);
-  }, [challenge, hintVisible, screen, showMarketHint, stage.assist.hintDelayMs, stage.id, stage.mechanic]);
+  }, [challenge, game.marketPhase, hintVisible, screen, showMarketHint, stage.assist.hintDelayMs, stage.id, stage.mechanic]);
 
   return {
     clearMarketTimers,
-    view: { puzzle: marketPuzzle, difficulties: marketDifficulties, activeDifficulty, challenge, question, answerChoices, hintText, difficulty: game.marketDifficulty, phase: game.marketPhase, basket: game.marketBasket, feedback: game.marketFeedback },
-    actions: { selectMarketDifficulty, selectMarketItem, answerMarket, showMarketHint },
+    view: {
+      puzzle: marketPuzzle,
+      difficulties: marketDifficulties,
+      activeDifficulty,
+      challenge,
+      customer,
+      question,
+      answerChoices,
+      hintText,
+      difficulty: game.marketDifficulty,
+      phase: game.marketPhase,
+      basket: game.marketBasket,
+      feedback: game.marketFeedback,
+      customerNumber: game.marketChallengeIndex + 1,
+      customerTarget: marketCustomersPerShift,
+    },
+    actions: { startMarketShift, selectMarketDifficulty, selectMarketItem, answerMarket, showMarketHint },
   };
 }

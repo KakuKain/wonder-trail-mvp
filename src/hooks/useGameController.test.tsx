@@ -2,12 +2,14 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stages } from "../data/stages";
+import { marketCustomersPerShift, marketSuccessDelayMs } from "../lib/market";
 import { resetSave } from "../lib/storage";
 import { useGameController } from "./useGameController";
 
 function renderMarketController() {
   const controller = renderHook(() => useGameController(stages.length));
   act(() => controller.result.current.startStage(5));
+  act(() => controller.result.current.actions.startMarketShift());
   return controller;
 }
 
@@ -27,6 +29,14 @@ function fillCurrentOrder(controller: ReturnType<typeof renderMarketController>)
   return controller.result.current.view.market.question;
 }
 
+function finishCurrentMarketOrder(controller: ReturnType<typeof renderMarketController>) {
+  const question = fillCurrentOrder(controller);
+  act(() => {
+    controller.result.current.actions.answerMarket(question);
+    vi.advanceTimersByTime(marketSuccessDelayMs);
+  });
+}
+
 function finishFirstForestStage(controller: ReturnType<typeof renderMarketController>) {
   act(() => controller.result.current.setStageBackgroundReady(true));
   const targetIds = controller.result.current.objects.filter((object) => object.isTarget).map((object) => object.instanceId);
@@ -44,12 +54,66 @@ describe("game controller market timers", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     localStorage.clear();
+    sessionStorage.clear();
     resetSave();
   });
 
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+  });
+
+  it("opens with the shopkeeper story before the first customer", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    act(() => controller.result.current.startStage(5));
+
+    expect(controller.result.current.view.market.phase).toBe("story");
+
+    act(() => controller.result.current.actions.startMarketShift());
+    expect(controller.result.current.view.market.phase).toBe("pick");
+    expect(controller.result.current.view.market.customerNumber).toBe(1);
+    expect(controller.result.current.view.market.customerTarget).toBe(marketCustomersPerShift);
+  });
+
+  it("remembers the global voice mute preference", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    expect(controller.result.current.view.voice.muted).toBe(false);
+
+    act(() => controller.result.current.actions.toggleVoice());
+    expect(controller.result.current.view.voice.muted).toBe(true);
+    expect(localStorage.getItem("wonder-trail:voice-muted")).toBe("true");
+
+    controller.unmount();
+    const restoredController = renderHook(() => useGameController(stages.length));
+    expect(restoredController.result.current.view.voice.muted).toBe(true);
+  });
+
+  it("skips the shopkeeper story after it has already been watched", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    act(() => controller.result.current.startStage(5));
+    act(() => controller.result.current.actions.startMarketShift());
+    act(() => controller.result.current.actions.returnHome());
+    act(() => controller.result.current.startStage(5));
+
+    expect(controller.result.current.view.market.phase).toBe("pick");
+  });
+
+  it("restores the same checkout after an accidental reload", () => {
+    const firstController = renderMarketController();
+    fillCurrentOrder(firstController);
+    const expectedChallengeId = firstController.result.current.view.market.challenge?.id;
+    const expectedQuestion = firstController.result.current.view.market.question;
+    const expectedBasket = firstController.result.current.marketBasket;
+
+    firstController.unmount();
+    const restoredController = renderHook(() => useGameController(stages.length));
+
+    expect(restoredController.result.current.screen).toBe("stage");
+    expect(restoredController.result.current.view.market.phase).toBe("total");
+    expect(restoredController.result.current.view.market.challenge?.id).toBe(expectedChallengeId);
+    expect(restoredController.result.current.view.market.question).toBe(expectedQuestion);
+    expect(restoredController.result.current.marketBasket).toEqual(expectedBasket);
+    expect(restoredController.result.current.marketSelectedTotal).toBeNull();
   });
 
   it("moves to the next order only once when a correct answer is pressed twice", () => {
@@ -59,14 +123,58 @@ describe("game controller market timers", () => {
     act(() => {
       controller.result.current.actions.answerMarket(question);
       controller.result.current.actions.answerMarket(question);
-      vi.advanceTimersByTime(550);
+      vi.advanceTimersByTime(marketSuccessDelayMs - 1);
     });
 
+    expect(controller.result.current.marketChallengeIndex).toBe(0);
+    expect(controller.result.current.view.market.phase).toBe("total");
+
+    act(() => vi.advanceTimersByTime(1));
     expect(controller.result.current.marketChallengeIndex).toBe(1);
     expect(controller.result.current.save.marketProgress.nextChallengeByDifficulty).toEqual({ beginner: 1 });
 
     act(() => vi.advanceTimersByTime(2_000));
     expect(controller.result.current.marketChallengeIndex).toBe(1);
+  });
+
+  it("ignores another answer while a correct checkout is pending", () => {
+    const controller = renderMarketController();
+    const question = fillCurrentOrder(controller);
+
+    act(() => {
+      controller.result.current.actions.answerMarket(question);
+      controller.result.current.actions.answerMarket(question + 1);
+    });
+
+    expect(controller.result.current.marketSelectedTotal).toBe(question);
+    expect(controller.result.current.marketFeedback).toBe(`謝謝小航！一共有 ${question} 個，你數對了！`);
+    expect(controller.result.current.wrongClicks).toBe(0);
+
+    act(() => vi.advanceTimersByTime(marketSuccessDelayMs));
+    expect(controller.result.current.marketChallengeIndex).toBe(1);
+  });
+
+  it("keeps the same animal customer from picking through checkout", () => {
+    const controller = renderMarketController();
+    const customerBeforePicking = controller.result.current.view.market.customer;
+
+    fillCurrentOrder(controller);
+
+    expect(controller.result.current.view.market.phase).toBe("total");
+    expect(controller.result.current.view.market.customer).toEqual(customerBeforePicking);
+  });
+
+  it("does not discard a checkout when a difficulty button is pressed", () => {
+    const controller = renderMarketController();
+    fillCurrentOrder(controller);
+    const basket = controller.result.current.marketBasket;
+    const challengeId = controller.result.current.view.market.challenge?.id;
+
+    act(() => controller.result.current.actions.selectMarketDifficulty(controller.result.current.marketDifficulty));
+
+    expect(controller.result.current.view.market.phase).toBe("total");
+    expect(controller.result.current.marketBasket).toEqual(basket);
+    expect(controller.result.current.view.market.challenge?.id).toBe(challengeId);
   });
 
   it("cancels a pending checkout when leaving the market", () => {
@@ -97,6 +205,43 @@ describe("game controller market timers", () => {
     expect(controller.result.current.hintVisible).toBe(true);
   });
 
+  it("completes a market difficulty without opening the generic reward screen", () => {
+    const controller = renderMarketController();
+
+    for (let order = 0; order < marketCustomersPerShift; order += 1) {
+      finishCurrentMarketOrder(controller);
+    }
+
+    expect(controller.result.current.screen).toBe("stage");
+    expect(controller.result.current.view.market.phase).toBe("complete");
+    expect(controller.result.current.reward).toBeNull();
+    expect(controller.result.current.lastCompletionWasNew).toBe(true);
+    expect(controller.result.current.save.completedStageIds).toContain(stages[5].id);
+    expect(controller.result.current.save.stickers).toEqual(expect.arrayContaining(stages[5].reward.stickers));
+    expect(controller.result.current.marketFeedback).toBe("初階完成！兔子老闆娘要把零件送給你。");
+  });
+
+  it("keeps a completed market replay in the market without awarding stars again", () => {
+    const controller = renderMarketController();
+
+    for (let order = 0; order < marketCustomersPerShift; order += 1) {
+      finishCurrentMarketOrder(controller);
+    }
+    const starsAfterFirstCompletion = controller.result.current.save.stars;
+    act(() => controller.result.current.actions.startMarketShift());
+
+    for (let order = 0; order < marketCustomersPerShift; order += 1) {
+      finishCurrentMarketOrder(controller);
+    }
+
+    expect(controller.result.current.screen).toBe("stage");
+    expect(controller.result.current.view.market.phase).toBe("complete");
+    expect(controller.result.current.reward).toBeNull();
+    expect(controller.result.current.lastCompletionWasNew).toBe(false);
+    expect(controller.result.current.save.stars).toBe(starsAfterFirstCompletion);
+    expect(controller.result.current.marketFeedback).toBe("初階再次完成，客人們都順利結帳了！");
+  });
+
   it("keeps forest replays playable without treating the part as newly acquired", () => {
     const controller = renderHook(() => useGameController(stages.length));
 
@@ -104,10 +249,12 @@ describe("game controller market timers", () => {
     finishFirstForestStage(controller);
     expect(controller.result.current.lastCompletionWasNew).toBe(true);
     expect(controller.result.current.save.stars).toBe(1);
+    const claimedRewardsAfterFirstCompletion = controller.result.current.events.filter((event) => event.event === "reward_claimed").length;
 
     act(() => controller.result.current.startStage(0));
     finishFirstForestStage(controller);
     expect(controller.result.current.lastCompletionWasNew).toBe(false);
     expect(controller.result.current.save.stars).toBe(1);
+    expect(controller.result.current.events.filter((event) => event.event === "reward_claimed")).toHaveLength(claimedRewardsAfterFirstCompletion);
   });
 });

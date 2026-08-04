@@ -139,7 +139,7 @@ export const stages: StageConfig[] = [
           label: "初階",
           shortLabel: "初",
           ageLabel: "3–4 歲",
-          skillLabel: "認數字與數量",
+          skillLabel: "數 1–3 個物品",
           questionMode: "number-recognition",
         },
         {
@@ -147,7 +147,7 @@ export const stages: StageConfig[] = [
           label: "中階",
           shortLabel: "中",
           ageLabel: "約 5 歲",
-          skillLabel: "個位數加法",
+          skillLabel: "兩個價錢相加",
           questionMode: "addition",
         },
         {
@@ -155,7 +155,7 @@ export const stages: StageConfig[] = [
           label: "高階",
           shortLabel: "高",
           ageLabel: "6–8 歲",
-          skillLabel: "多項加法",
+          skillLabel: "三個價錢連加",
           questionMode: "multi-addition",
         },
         {
@@ -163,7 +163,7 @@ export const stages: StageConfig[] = [
           label: "魔王關",
           shortLabel: "王",
           ageLabel: "BONUS",
-          skillLabel: "綜合任務",
+          skillLabel: "乘法與綜合任務",
           questionMode: "challenge",
           unlockAfter: "advanced",
         },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { advanceMarketProgress, completeStageSave, getStageInitialState, resetGameProgress, selectForestTarget, selectMarketDifficulty } from "./gameFlow";
+import { advanceMarketProgress, completeStageSave, forestRewardCopy, getStageInitialState, resetGameProgress, selectForestTarget, selectMarketDifficulty } from "./gameFlow";
 import { stages } from "../data/stages";
 import type { MarketProgress, PlacedObject } from "../types";
 import { defaultSave } from "./storage";
@@ -10,6 +10,20 @@ describe("controller flow rules", () => {
     const completed = completeStageSave(defaultSave, "forest_search_01", reward, "2026-07-21T00:00:00.000Z");
     expect(completed).toMatchObject({ completedStageIds: ["forest_search_01"], stars: 2, stickers: ["apple"] });
     expect(completeStageSave(completed, "forest_search_01", reward, "later").stars).toBe(2);
+  });
+
+  it("uses replay copy that does not imply the forest reward was awarded again", () => {
+    expect(forestRewardCopy("紅蝴蝶", true)).toMatchObject({
+      collectionAria: "收進圖鑑：紅蝴蝶",
+      eyebrow: "收進圖鑑",
+      headline: "成功取得寶物！",
+    });
+    expect(forestRewardCopy("紅蝴蝶", false)).toEqual({
+      collectionAria: "已在圖鑑裡：紅蝴蝶",
+      eyebrow: "已在圖鑑裡",
+      headline: "再次完成關卡！",
+      detail: "紅蝴蝶已在圖鑑裡。",
+    });
   });
 
   it("moves to the next market question after a correct checkout", () => {
@@ -42,7 +56,7 @@ describe("controller flow rules", () => {
     expect(getStageInitialState(stages[5], progress)).toMatchObject({
       stageBackgroundReady: true,
       marketDifficulty: "advanced",
-      marketChallengeIndex: 2,
+      marketChallengeIndex: 4,
     });
   });
 
