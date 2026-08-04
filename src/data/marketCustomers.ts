@@ -30,6 +30,25 @@ const customerOffsets: Record<MarketDifficultyId, number> = {
   boss: 8,
 };
 
-export function marketCustomerForRound(difficulty: MarketDifficultyId, roundIndex: number) {
-  return marketCustomers[(customerOffsets[difficulty] + roundIndex) % marketCustomers.length];
+function customerSeed(difficulty: MarketDifficultyId, seed: number) {
+  return Array.from(`${difficulty}:${Math.floor(seed)}`).reduce(
+    (hash, character) => Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0,
+    2166136261,
+  );
+}
+
+export function marketCustomerOrder(difficulty: MarketDifficultyId, seed: number) {
+  const customers = [...marketCustomers];
+  let state = customerSeed(difficulty, seed) ^ customerOffsets[difficulty];
+  for (let index = customers.length - 1; index > 0; index -= 1) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const swapIndex = state % (index + 1);
+    [customers[index], customers[swapIndex]] = [customers[swapIndex], customers[index]];
+  }
+  return customers;
+}
+
+export function marketCustomerForRound(difficulty: MarketDifficultyId, roundIndex: number, shiftSeed = 0) {
+  const customers = marketCustomerOrder(difficulty, shiftSeed);
+  return customers[roundIndex % customers.length];
 }

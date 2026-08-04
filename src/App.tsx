@@ -80,13 +80,13 @@ const chapters = [
 export function App() {
   const game = useGameController(stages.length);
   const {
-    save, saveProtectionMode, screen, setScreen, stageIndex, objects,
+    save, saveProtectionMode, screen, stageIndex, objects,
     hintVisible,
     reward, lastCompletionWasNew, eventsOpen, setEventsOpen, events,
     collectionOpen, setCollectionOpen, collectionPage, setCollectionPage,
     homeMapReady, setHomeMapReady, stageBackgroundReady, setStageBackgroundReady,
     stageBackgroundIndex, marketCompletedDifficulties,
-    marketPhase, marketBasket, marketSelectedTotal, marketFeedback, logEvent, speak, view, actions, startStage,
+    marketPhase, marketBasket, marketSelectedTotal, marketFeedback, speak, view, actions,
   } = game;
   const {
     puzzle: marketPuzzle,
@@ -130,38 +130,6 @@ export function App() {
   const currentCollectionPage = Math.min(collectionPage, collectionPages.length - 1);
   const debugEnabled = useMemo(() => new URLSearchParams(window.location.search).has("debug"), []);
   const playtestSummary = useMemo(() => summarizeEvents(events), [events]);
-  function continueAdventure() {
-    const nextIndex = stageIndex + 1;
-    const nextStage = stages[nextIndex];
-
-    if (stage.world === "forest" && nextStage?.world !== "forest") {
-      setScreen("complete");
-      if (lastCompletionWasNew) {
-        speak("森林的任務完成，取得飛機零件 A！", {
-          tone: "positive",
-          interrupt: true,
-        });
-        logEvent("chapter_complete", stage.id, {
-          world: stage.world,
-          part: "A",
-        });
-      } else {
-        speak("恭喜再次通關！", { tone: "positive", interrupt: true });
-      }
-      return;
-    }
-
-    if (nextIndex >= stages.length) {
-      setScreen("complete");
-      logEvent("session_end", undefined, {
-        completedStages: save.completedStageIds.length,
-        stars: save.stars,
-      });
-      return;
-    }
-    startStage(nextIndex);
-  }
-
   useEffect(() => {
     preloadMarketStoryAssets();
   }, []);
@@ -325,7 +293,7 @@ export function App() {
                 aria-label={stage.world === "forest" && stages[stageIndex + 1]?.world !== "forest"
                   ? lastCompletionWasNew ? "取得零件 A" : "完成森林冒險"
                   : stageIndex + 1 >= stages.length ? "查看結果" : "下一段森林路"}
-                onClick={continueAdventure}
+                onClick={actions.continueForestAdventure}
               >
                 <ArrowRightIcon />
               </button>

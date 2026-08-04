@@ -2,7 +2,7 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stages } from "../data/stages";
-import { marketCustomersPerShift, marketSuccessDelayMs } from "../lib/market";
+import { marketCustomersPerShift, marketOrderSignature, marketSuccessDelayMs } from "../lib/market";
 import { resetSave } from "../lib/storage";
 import { useGameController } from "./useGameController";
 
@@ -60,6 +60,7 @@ describe("game controller market timers", () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -100,10 +101,16 @@ describe("game controller market timers", () => {
 
   it("restores the same checkout after an accidental reload", () => {
     const firstController = renderMarketController();
+    finishCurrentMarketOrder(firstController);
     fillCurrentOrder(firstController);
     const expectedChallengeId = firstController.result.current.view.market.challenge?.id;
+    const expectedOrder = firstController.result.current.view.market.challenge?.order;
     const expectedQuestion = firstController.result.current.view.market.question;
+    const expectedCustomerId = firstController.result.current.view.market.customer.id;
+    const expectedAnswerChoices = firstController.result.current.view.market.answerChoices;
     const expectedBasket = firstController.result.current.marketBasket;
+    const expectedOrderHistory = firstController.result.current.marketRecentOrderSignatures;
+    const expectedAnswerHistory = firstController.result.current.marketRecentCorrectPositions;
 
     firstController.unmount();
     const restoredController = renderHook(() => useGameController(stages.length));
@@ -111,9 +118,37 @@ describe("game controller market timers", () => {
     expect(restoredController.result.current.screen).toBe("stage");
     expect(restoredController.result.current.view.market.phase).toBe("total");
     expect(restoredController.result.current.view.market.challenge?.id).toBe(expectedChallengeId);
+    expect(restoredController.result.current.view.market.challenge?.order).toEqual(expectedOrder);
     expect(restoredController.result.current.view.market.question).toBe(expectedQuestion);
+    expect(restoredController.result.current.view.market.customer.id).toBe(expectedCustomerId);
+    expect(restoredController.result.current.view.market.answerChoices).toEqual(expectedAnswerChoices);
     expect(restoredController.result.current.marketBasket).toEqual(expectedBasket);
+    expect(restoredController.result.current.marketRecentOrderSignatures).toEqual(expectedOrderHistory);
+    expect(restoredController.result.current.marketRecentCorrectPositions).toEqual(expectedAnswerHistory);
     expect(restoredController.result.current.marketSelectedTotal).toBeNull();
+  });
+
+  it("serves a varied five-customer shift without recent duplicate orders", () => {
+    const controller = renderMarketController();
+    const customerIds: string[] = [];
+    const orderSignatures: string[] = [];
+    const correctPositions: number[] = [];
+
+    for (let round = 0; round < marketCustomersPerShift; round += 1) {
+      const market = controller.result.current.view.market;
+      if (!market.challenge) throw new Error("Expected a market challenge");
+      const signature = marketOrderSignature(market.challenge.order);
+      expect(orderSignatures.slice(-4)).not.toContain(signature);
+      customerIds.push(market.customer.id);
+      orderSignatures.push(signature);
+      correctPositions.push(market.answerChoices.indexOf(market.question));
+      finishCurrentMarketOrder(controller);
+    }
+
+    expect(new Set(customerIds).size).toBe(marketCustomersPerShift);
+    for (let index = 2; index < correctPositions.length; index += 1) {
+      expect(new Set(correctPositions.slice(index - 2, index + 1)).size).toBeGreaterThan(1);
+    }
   });
 
   it("moves to the next order only once when a correct answer is pressed twice", () => {
@@ -256,5 +291,28 @@ describe("game controller market timers", () => {
     expect(controller.result.current.lastCompletionWasNew).toBe(false);
     expect(controller.result.current.save.stars).toBe(1);
     expect(controller.result.current.events.filter((event) => event.event === "reward_claimed")).toHaveLength(claimedRewardsAfterFirstCompletion);
+  });
+
+  it("keeps the first forest stage as the replay introduction and shuffles stages two to five", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    for (let stageIndex = 0; stageIndex < 5; stageIndex += 1) {
+      act(() => controller.result.current.startStage(stageIndex));
+      act(() => controller.result.current.actions.completeStage());
+    }
+    act(() => controller.result.current.actions.returnHome());
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    act(() => controller.result.current.actions.startForest());
+    const replayIndexes: number[] = [];
+    for (let round = 0; round < 5; round += 1) {
+      replayIndexes.push(controller.result.current.stageIndex);
+      act(() => controller.result.current.actions.completeStage());
+      act(() => controller.result.current.actions.continueForestAdventure());
+    }
+
+    expect(replayIndexes[0]).toBe(0);
+    expect(replayIndexes.slice(1)).not.toEqual([1, 2, 3, 4]);
+    expect([...replayIndexes].sort((left, right) => left - right)).toEqual([0, 1, 2, 3, 4]);
+    expect(controller.result.current.screen).toBe("complete");
   });
 });

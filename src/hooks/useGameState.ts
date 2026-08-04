@@ -43,6 +43,9 @@ export function useGameState() {
   const [marketCompletedDifficulties, setMarketCompletedDifficulties] = useState<MarketDifficultyId[]>(save.marketProgress.completedDifficulties);
   const [marketChallengeIndex, setMarketChallengeIndex] = useState(restoredMarketRound?.challengeIndex ?? save.marketProgress.nextChallengeByDifficulty[save.marketProgress.activeDifficulty] ?? 0);
   const [marketRoundSeed, setMarketRoundSeed] = useState(() => restoredMarketRound?.roundSeed ?? Date.now() + Math.random());
+  const [marketShiftSeed, setMarketShiftSeed] = useState(() => restoredMarketRound?.shiftSeed ?? Date.now() + Math.random());
+  const [marketRecentOrderSignatures, setMarketRecentOrderSignatures] = useState<string[]>(restoredMarketRound?.recentOrderSignatures ?? []);
+  const [marketRecentCorrectPositions, setMarketRecentCorrectPositions] = useState<number[]>(restoredMarketRound?.recentCorrectPositions ?? []);
   const [marketPhase, setMarketPhase] = useState<MarketPhase>(restoredMarketRound?.phase ?? "pick");
   const [marketBasket, setMarketBasket] = useState<Record<string, number>>(restoredMarketRound?.basket ?? {});
   const [marketSelectedTotal, setMarketSelectedTotal] = useState<number | null>(null);
@@ -60,6 +63,9 @@ export function useGameState() {
         difficulty: marketDifficulty,
         challengeIndex: marketChallengeIndex,
         roundSeed: marketRoundSeed,
+        shiftSeed: marketShiftSeed,
+        recentOrderSignatures: marketRecentOrderSignatures,
+        recentCorrectPositions: marketRecentCorrectPositions,
         phase: marketPhase,
         basket: marketBasket,
         feedback: marketSelectedTotal === null ? marketFeedback : "",
@@ -67,7 +73,7 @@ export function useGameState() {
       return;
     }
     clearMarketRoundSession();
-  }, [marketBasket, marketChallengeIndex, marketDifficulty, marketFeedback, marketPhase, marketRoundSeed, marketSelectedTotal, screen, stageIndex]);
+  }, [marketBasket, marketChallengeIndex, marketDifficulty, marketFeedback, marketPhase, marketRecentCorrectPositions, marketRecentOrderSignatures, marketRoundSeed, marketSelectedTotal, marketShiftSeed, screen, stageIndex]);
 
   return {
     save, setSave, saveProtectionMode, setSaveProtectionMode, screen, setScreen, stageIndex, setStageIndex, objects, setObjects,
@@ -78,6 +84,9 @@ export function useGameState() {
     stageBackgroundIndex, setStageBackgroundIndex, marketDifficulty, setMarketDifficulty,
     marketCompletedDifficulties, setMarketCompletedDifficulties,
     marketChallengeIndex, setMarketChallengeIndex, marketRoundSeed, setMarketRoundSeed,
+    marketShiftSeed, setMarketShiftSeed,
+    marketRecentOrderSignatures, setMarketRecentOrderSignatures,
+    marketRecentCorrectPositions, setMarketRecentCorrectPositions,
     marketPhase, setMarketPhase, marketBasket, setMarketBasket,
     marketSelectedTotal, setMarketSelectedTotal, marketFeedback, setMarketFeedback,
   };

@@ -17,6 +17,16 @@ export function getStageInitialState(stage: StageConfig, progress: MarketProgres
   };
 }
 
+export function createForestReplayRoute(forestStageIndexes: number[], random: () => number = Math.random) {
+  if (forestStageIndexes.length <= 1) return [...forestStageIndexes];
+  const [firstStageIndex, ...replayStages] = forestStageIndexes;
+  for (let index = replayStages.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [replayStages[index], replayStages[swapIndex]] = [replayStages[swapIndex], replayStages[index]];
+  }
+  return [firstStageIndex, ...replayStages];
+}
+
 export function selectForestTarget(objects: PlacedObject[], instanceId: string) {
   const selectedObject = objects.find((object) => object.instanceId === instanceId);
   if (!selectedObject?.isTarget || selectedObject.found) {

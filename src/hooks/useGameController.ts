@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { xiaohangVoicePreference } from "../data/voice";
 import { stages } from "../data/stages";
-import { getStageInitialState } from "../lib/gameFlow";
+import { createForestReplayRoute, getStageInitialState } from "../lib/gameFlow";
 import { clearMarketRoundSession, clearMarketStorySeen, hasSeenMarketStory } from "../lib/marketSession";
 import { appendEvent, getSaveProtectionMode, loadEvents, loadSave, resetSave, writeSave } from "../lib/storage";
 import { createPlacedObjects } from "../lib/stagePlacement";
@@ -35,6 +35,8 @@ export function useGameController(totalStages: number) {
   const game = useGameState();
   const { setEvents, setVoices } = game;
   const sessionId = useRef(`session-${Date.now()}`);
+  const forestReplayRoute = useRef<number[]>([]);
+  const forestReplayPosition = useRef(0);
   const voiceQueue = useRef(new VoiceQueue());
   const [voiceSpeaking, setVoiceSpeaking] = useState(false);
   const [voiceSupported] = useState(() => typeof window !== "undefined" && "speechSynthesis" in window);
@@ -104,6 +106,9 @@ export function useGameController(totalStages: number) {
     game.setMarketCompletedDifficulties(initial.marketCompletedDifficulties);
     game.setMarketChallengeIndex(initial.marketChallengeIndex);
     game.setMarketRoundSeed(Date.now() + Math.random());
+    game.setMarketShiftSeed(Date.now() + Math.random());
+    game.setMarketRecentOrderSignatures([]);
+    game.setMarketRecentCorrectPositions([]);
     const shouldShowMarketStory = nextStage.mechanic === "market"
       && !hasSeenMarketStory()
       && !game.save.completedStageIds.includes(nextStage.id);
@@ -117,9 +122,49 @@ export function useGameController(totalStages: number) {
   }, [clearMarketTimers, game, logEvent, speak, stageStartedAt]);
 
   const startWorld = useCallback((world: "forest" | "market") => {
-    const index = stages.findIndex((item) => item.world === world && !game.save.completedStageIds.includes(item.id));
-    startStage(index === -1 ? Math.max(0, stages.findIndex((item) => item.world === world)) : index);
+    const worldStageIndexes = stages.flatMap((item, index) => item.world === world ? [index] : []);
+    const index = worldStageIndexes.find((stageIndex) => !game.save.completedStageIds.includes(stages[stageIndex].id));
+    if (world === "forest" && index === undefined) {
+      const route = createForestReplayRoute(worldStageIndexes);
+      forestReplayRoute.current = route;
+      forestReplayPosition.current = 0;
+      startStage(route[0]);
+      return;
+    }
+    forestReplayRoute.current = [];
+    forestReplayPosition.current = 0;
+    startStage(index ?? worldStageIndexes[0] ?? 0);
   }, [game.save.completedStageIds, startStage]);
+
+  const continueForestAdventure = useCallback(() => {
+    if (stage.world !== "forest") return;
+    if (forestReplayRoute.current.length > 0) {
+      const nextPosition = forestReplayPosition.current + 1;
+      if (nextPosition < forestReplayRoute.current.length) {
+        forestReplayPosition.current = nextPosition;
+        startStage(forestReplayRoute.current[nextPosition]);
+        return;
+      }
+      game.setScreen("complete");
+      speak("恭喜再次通關！", { tone: "positive", interrupt: true });
+      return;
+    }
+
+    const nextIndex = game.stageIndex + 1;
+    const nextStage = stages[nextIndex];
+    if (nextStage?.world === "forest") {
+      startStage(nextIndex);
+      return;
+    }
+
+    game.setScreen("complete");
+    if (game.lastCompletionWasNew) {
+      speak("森林的任務完成，取得飛機零件 A！", { tone: "positive", interrupt: true });
+      logEvent("chapter_complete", stage.id, { world: stage.world, part: "A" });
+    } else {
+      speak("恭喜再次通關！", { tone: "positive", interrupt: true });
+    }
+  }, [game, logEvent, speak, stage.id, stage.world, startStage]);
 
   const resetProgress = useCallback(() => {
     clearMarketTimers();
@@ -142,10 +187,15 @@ export function useGameController(totalStages: number) {
     game.setMarketCompletedDifficulties(save.marketProgress.completedDifficulties);
     game.setMarketChallengeIndex(0);
     game.setMarketRoundSeed(Date.now() + Math.random());
+    game.setMarketShiftSeed(Date.now() + Math.random());
+    game.setMarketRecentOrderSignatures([]);
+    game.setMarketRecentCorrectPositions([]);
     game.setMarketPhase("pick");
     game.setMarketBasket({});
     game.setMarketSelectedTotal(null);
     game.setMarketFeedback("");
+    forestReplayRoute.current = [];
+    forestReplayPosition.current = 0;
     game.setScreen("intro");
     logEvent("progress_reset");
   }, [cancelSpeech, clearMarketTimers, game, logEvent]);
@@ -206,6 +256,7 @@ export function useGameController(totalStages: number) {
     selectMarketDifficulty,
     selectMarketItem,
     answerMarket,
+    continueForestAdventure,
     toggleVoice,
     returnHome,
   };

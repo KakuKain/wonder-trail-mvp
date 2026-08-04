@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { marketCustomerForRound, marketCustomers } from "../data/marketCustomers";
+import { marketCustomerForRound, marketCustomerOrder, marketCustomers } from "../data/marketCustomers";
 import { stages } from "../data/stages";
-import { isMarketDifficultyUnlocked, marketAnswerOptions, marketBasketMatches, marketCalculationTerms, marketChallengeFitsDifficulty, marketCustomerReminder, marketQuantityPrompt, marketQuestionValue, marketRequiredCount, marketTotal, randomizeMarketChallenge } from "./market";
+import { isMarketDifficultyUnlocked, marketAnswerOptions, marketBasketMatches, marketCalculationTerms, marketChallengeFitsDifficulty, marketCustomerReminder, marketOrderSignature, marketQuantityPrompt, marketQuestionValue, marketRequiredCount, marketTotal, randomizeMarketChallenge } from "./market";
 import type { MarketChallengeConfig } from "../types";
 
 const challenge: MarketChallengeConfig = { id: "test", difficulty: "intermediate", customerName: "小鹿", customerRuby: "", requestText: "", requestRuby: [], order: [{ assetId: "apple", count: 2 }, { assetId: "mushroom", count: 1 }], prices: { apple: 2, mushroom: 3 } };
@@ -12,11 +12,13 @@ describe("market rules", () => {
     expect(marketCustomerReminder("小鹿", "請幫我拿蘋果。")).toBe("小鹿說，請幫我拿蘋果。");
   });
 
-  it("provides ten distinct customers and keeps each round assignment stable", () => {
+  it("shuffles ten customers deterministically without repeats during a shift", () => {
     expect(marketCustomers).toHaveLength(10);
     expect(new Set(marketCustomers.map((customer) => customer.id)).size).toBe(10);
-    expect(marketCustomerForRound("beginner", 1).id).toBe("deer");
-    expect(marketCustomerForRound("beginner", 1)).toBe(marketCustomerForRound("beginner", 1));
+    const order = marketCustomerOrder("beginner", 42);
+    expect(new Set(order.slice(0, 5).map((customer) => customer.id)).size).toBe(5);
+    expect(marketCustomerForRound("beginner", 1, 42)).toBe(marketCustomerForRound("beginner", 1, 42));
+    expect(marketCustomerOrder("beginner", 43).map((customer) => customer.id)).not.toEqual(order.map((customer) => customer.id));
   });
 
   it("calculates totals and quantity-recognition answers", () => {
@@ -24,6 +26,13 @@ describe("market rules", () => {
     expect(marketQuestionValue(challenge, "addition")).toBe(7);
     expect(marketQuestionValue(challenge, "number-recognition")).toBe(3);
     expect(marketAnswerOptions(1, "one")).toEqual(expect.arrayContaining([1, 2, 3]));
+  });
+
+  it("moves the correct answer when it occupied the same position twice", () => {
+    const original = marketAnswerOptions(5, 99);
+    const originalPosition = original.indexOf(5);
+    const adjusted = marketAnswerOptions(5, 99, [originalPosition, originalPosition]);
+    expect(adjusted.indexOf(5)).not.toBe(originalPosition);
   });
 
   it("describes a beginner quantity question with the item's natural counter", () => {
@@ -43,6 +52,27 @@ describe("market rules", () => {
         expect(marketChallengeFitsDifficulty(randomizeMarketChallenge({ ...challenge, difficulty }, seed))).toBe(true);
       }
     }
+  });
+
+  it("avoids recently used order signatures while preserving the age rules", () => {
+    const recent: string[] = [];
+    for (let round = 0; round < 8; round += 1) {
+      const randomized = randomizeMarketChallenge({ ...challenge, difficulty: "beginner" }, 100 + round, recent);
+      const signature = marketOrderSignature(randomized.order);
+      expect(recent).not.toContain(signature);
+      expect(marketChallengeFitsDifficulty(randomized)).toBe(true);
+      recent.push(signature);
+      if (recent.length > 4) recent.shift();
+    }
+  });
+
+  it("avoids showing the same beginner product for a third consecutive order", () => {
+    const randomized = randomizeMarketChallenge(
+      { ...challenge, difficulty: "beginner" },
+      42,
+      ["apple:1", "apple:2"],
+    );
+    expect(randomized.order[0].assetId).not.toBe("apple");
   });
 
   it("expands addition into one visible term per item and reserves multiplication for the boss", () => {

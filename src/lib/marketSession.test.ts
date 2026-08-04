@@ -20,6 +20,9 @@ describe("market round session", () => {
       difficulty: "beginner",
       challengeIndex: 2,
       roundSeed: 123.5,
+      shiftSeed: 456.5,
+      recentOrderSignatures: ["apple:1", "acorn:2"],
+      recentCorrectPositions: [0, 2],
       phase: "total",
       basket: { apple: 2, acorn: 1 },
       feedback: "",
@@ -30,6 +33,9 @@ describe("market round session", () => {
       difficulty: "beginner",
       challengeIndex: 2,
       roundSeed: 123.5,
+      shiftSeed: 456.5,
+      recentOrderSignatures: ["apple:1", "acorn:2"],
+      recentCorrectPositions: [0, 2],
       phase: "total",
       basket: { apple: 2, acorn: 1 },
       feedback: "",
@@ -51,12 +57,33 @@ describe("market round session", () => {
     expect(sessionStorage.getItem("wonder-trail:market-round-session")).toBeNull();
   });
 
+  it("restores an older round session with safe random-history defaults", () => {
+    sessionStorage.setItem("wonder-trail:market-round-session", JSON.stringify({
+      stageId: "market-1",
+      difficulty: "beginner",
+      challengeIndex: 1,
+      roundSeed: 123,
+      phase: "pick",
+      basket: {},
+      feedback: "",
+    }));
+
+    expect(loadMarketRoundSession()).toMatchObject({
+      shiftSeed: 123,
+      recentOrderSignatures: [],
+      recentCorrectPositions: [],
+    });
+  });
+
   it("clears a round without forgetting that the story was seen", () => {
     writeMarketRoundSession({
       stageId: "market-1",
       difficulty: "beginner",
       challengeIndex: 0,
       roundSeed: 1,
+      shiftSeed: 2,
+      recentOrderSignatures: [],
+      recentCorrectPositions: [],
       phase: "pick",
       basket: {},
       feedback: "",

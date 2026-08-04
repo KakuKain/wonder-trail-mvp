@@ -10,6 +10,9 @@ export type MarketRoundSession = {
   difficulty: MarketDifficultyId;
   challengeIndex: number;
   roundSeed: number;
+  shiftSeed: number;
+  recentOrderSignatures: string[];
+  recentCorrectPositions: number[];
   phase: Extract<MarketPhase, "pick" | "total">;
   basket: Record<string, number>;
   feedback: string;
@@ -24,6 +27,14 @@ function isBasket(value: unknown): value is Record<string, number> {
   return Object.entries(value).every(([assetId, count]) =>
     assetId.length > 0 && typeof count === "number" && Number.isInteger(count) && count >= 0
   );
+}
+
+function isStringList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isAnswerPositionList(value: unknown): value is number[] {
+  return Array.isArray(value) && value.every((item) => Number.isInteger(item) && item >= 0 && item <= 2);
 }
 
 export function loadMarketRoundSession(): MarketRoundSession | null {
@@ -42,6 +53,9 @@ export function loadMarketRoundSession(): MarketRoundSession | null {
       || value.challengeIndex < 0
       || typeof value.roundSeed !== "number"
       || !Number.isFinite(value.roundSeed)
+      || (value.shiftSeed !== undefined && (typeof value.shiftSeed !== "number" || !Number.isFinite(value.shiftSeed)))
+      || (value.recentOrderSignatures !== undefined && !isStringList(value.recentOrderSignatures))
+      || (value.recentCorrectPositions !== undefined && !isAnswerPositionList(value.recentCorrectPositions))
       || (value.phase !== "pick" && value.phase !== "total")
       || !isBasket(value.basket)
       || typeof value.feedback !== "string"
@@ -50,7 +64,12 @@ export function loadMarketRoundSession(): MarketRoundSession | null {
       return null;
     }
 
-    return value as MarketRoundSession;
+    return {
+      ...(value as Omit<MarketRoundSession, "shiftSeed" | "recentOrderSignatures" | "recentCorrectPositions">),
+      shiftSeed: value.shiftSeed ?? value.roundSeed,
+      recentOrderSignatures: value.recentOrderSignatures?.slice(-4) ?? [],
+      recentCorrectPositions: value.recentCorrectPositions?.slice(-2) ?? [],
+    };
   } catch {
     storage.removeItem(marketRoundKey);
     return null;

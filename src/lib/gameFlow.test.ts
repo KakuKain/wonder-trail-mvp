@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { advanceMarketProgress, completeStageSave, forestRewardCopy, getStageInitialState, resetGameProgress, selectForestTarget, selectMarketDifficulty } from "./gameFlow";
+import { advanceMarketProgress, completeStageSave, createForestReplayRoute, forestRewardCopy, getStageInitialState, resetGameProgress, selectForestTarget, selectMarketDifficulty } from "./gameFlow";
 import { stages } from "../data/stages";
 import type { MarketProgress, PlacedObject } from "../types";
 import { defaultSave } from "./storage";
@@ -24,6 +24,14 @@ describe("controller flow rules", () => {
       headline: "再次完成關卡！",
       detail: "紅蝴蝶已在圖鑑裡。",
     });
+  });
+
+  it("keeps the forest introduction first and shuffles the remaining replay stages", () => {
+    const randomValues = [0.1, 0.8, 0.2];
+    const route = createForestReplayRoute([0, 1, 2, 3, 4], () => randomValues.shift() ?? 0);
+    expect(route[0]).toBe(0);
+    expect(route.slice(1)).not.toEqual([1, 2, 3, 4]);
+    expect([...route].sort((left, right) => left - right)).toEqual([0, 1, 2, 3, 4]);
   });
 
   it("moves to the next market question after a correct checkout", () => {
