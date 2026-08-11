@@ -3,7 +3,6 @@ import type { MarketChallengeConfig, MarketDifficultyConfig, MarketDifficultyId,
 
 export const marketItemPrices: Record<string, number> = { apple: 2, pine_cone: 2, pink_flower: 3, mushroom: 3, acorn: 3 };
 export const marketShelfItemIds = ["apple", "pine_cone", "pink_flower", "mushroom", "acorn"];
-export const marketSuccessDelayMs = 1_800;
 export const marketCustomersPerShift = 5;
 
 export function marketCustomerReminder(customerName: string, requestText: string) {

@@ -80,7 +80,7 @@ export function useGameController(totalStages: number) {
   const market = useMarketFlow({ game, logEvent, speak, persistSave });
   const { completeStage, selectForestObject, showForestHint, stageStartedAt } = forest;
   const { clearMarketTimers, view: marketView, actions: marketActions } = market;
-  const { answerMarket, selectMarketDifficulty, selectMarketItem, showMarketHint, startMarketShift } = marketActions;
+  const { answerMarket, continueMarket, selectMarketDifficulty, selectMarketItem, showMarketHint, startMarketShift } = marketActions;
   const stage = stages[game.stageIndex];
 
   const startStage = useCallback((index: number) => {
@@ -159,7 +159,7 @@ export function useGameController(totalStages: number) {
 
     game.setScreen("complete");
     if (game.lastCompletionWasNew) {
-      speak("森林的任務完成，取得飛機零件 A！", { tone: "positive", interrupt: true });
+      speak("森林的任務完成，取得金色螺旋槳零件！", { tone: "positive", interrupt: true });
       logEvent("chapter_complete", stage.id, { world: stage.world, part: "A" });
     } else {
       speak("恭喜再次通關！", { tone: "positive", interrupt: true });
@@ -256,6 +256,7 @@ export function useGameController(totalStages: number) {
     selectMarketDifficulty,
     selectMarketItem,
     answerMarket,
+    continueMarket,
     continueForestAdventure,
     toggleVoice,
     returnHome,

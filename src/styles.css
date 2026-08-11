@@ -1458,15 +1458,15 @@ p {
 .market-complete-part {
   position: relative;
   display: grid;
-  min-height: 90px;
+  min-height: 100px;
   place-items: center;
 }
 
 .market-complete-part img {
   position: relative;
   z-index: 2;
-  width: 76px;
-  height: 76px;
+  width: 118px;
+  height: 88px;
   object-fit: contain;
   filter: drop-shadow(0 6px 5px rgba(103, 62, 27, 0.28));
   animation: market-success-pop 320ms ease-out both;
@@ -2689,9 +2689,9 @@ p {
 }
 
 .market-register-keys-correct {
-  right: 33%;
-  left: 32%;
-  grid-template-columns: minmax(0, 1fr);
+  right: 13%;
+  left: 13%;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
 }
 
 .market-register-keys-correct .market-answer-button.correct {
@@ -2708,6 +2708,46 @@ p {
 .market-register-keys-correct .market-answer-button.correct strong,
 .market-register-keys-correct .market-answer-button.correct span {
   color: #4b3025;
+}
+
+.market-next-order-button {
+  display: grid;
+  place-content: center;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 16px;
+  color: #5a351d;
+  background: linear-gradient(180deg, rgba(255, 237, 139, 0.96), rgba(255, 199, 73, 0.94));
+  box-shadow:
+    inset 0 0 0 4px rgba(152, 98, 36, 0.64),
+    0 4px 0 rgba(105, 62, 28, 0.28);
+  font-family: var(--ui-number-font);
+  line-height: 1.05;
+  cursor: pointer;
+  animation: market-success-pop 300ms ease-out both;
+}
+
+.market-next-order-button span {
+  font-size: clamp(0.72rem, 3vw, 0.88rem);
+  font-weight: 800;
+}
+
+.market-next-order-button strong {
+  font-size: clamp(1rem, 4.6vw, 1.26rem);
+  font-weight: 950;
+}
+
+.market-next-order-button:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 0 0 4px rgba(152, 98, 36, 0.64);
+}
+
+.market-next-order-button:focus-visible {
+  outline: 4px solid #fff0a6;
+  outline-offset: 3px;
 }
 
 .market-register-audio.speaking {
@@ -3708,7 +3748,7 @@ p {
 }
 
 .collection-next-button {
-  min-width: 76px;
+  min-width: 164px;
   min-height: 54px;
   border-color: #7d5d22;
   background:
@@ -4524,7 +4564,7 @@ p {
   }
 
   .collection-next-button {
-    min-width: 72px;
+    min-width: 154px;
     min-height: 50px;
   }
 

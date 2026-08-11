@@ -243,6 +243,7 @@ export function App() {
               onDifficultySelect={actions.selectMarketDifficulty}
               onItemSelect={actions.selectMarketItem}
               onAnswerSelect={actions.answerMarket}
+              onContinue={actions.continueMarket}
             />
           ) : (
             <ForestStage
@@ -290,11 +291,10 @@ export function App() {
               <button
                 className="collection-action-button collection-next-button"
                 type="button"
-                aria-label={stage.world === "forest" && stages[stageIndex + 1]?.world !== "forest"
-                  ? lastCompletionWasNew ? "取得零件 A" : "完成森林冒險"
-                  : stageIndex + 1 >= stages.length ? "查看結果" : "下一段森林路"}
+                aria-label={stages[stageIndex + 1]?.world === "forest" ? "前往下一關" : "完成森林"}
                 onClick={actions.continueForestAdventure}
               >
+                <span>{stages[stageIndex + 1]?.world === "forest" ? "前往下一關" : "完成森林"}</span>
                 <ArrowRightIcon />
               </button>
             </div>
@@ -334,7 +334,7 @@ export function App() {
           </div>}
           partReward={stage.world === "forest" && !lastCompletionWasNew ? (
             <div className="complete-replay-mark" aria-label="再次通關"><span>✓</span></div>
-          ) : <div className="complete-part-reward" aria-label="取得飛機零件">
+          ) : <div className="complete-part-reward" aria-label="取得金色螺旋槳零件">
             <span className="complete-part-glow" aria-hidden="true" />
             <img src={planePartReward} alt="" aria-hidden="true" />
           </div>}

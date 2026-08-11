@@ -55,9 +55,10 @@ type Props = {
   onDifficultySelect: (difficulty: MarketDifficultyId) => void;
   onItemSelect: (assetId: string) => void;
   onAnswerSelect: (value: number) => void;
+  onContinue: () => void;
 };
 
-export function MarketStage({ challenge, customer, completionWasNew, currencyIntroText, currencyIntroRuby, showCurrencyIntro, difficulties, activeDifficulty, completedDifficulties, basket, phase, feedback, total, answerOptions, selectedTotal, hintVisible, renderObjectIcon, renderRubyText, homeIcon, hintIcon, lockIcon, speakerIcon, voiceSupported, voiceSpeaking, voiceMuted, onHome, onHint, onSpeak, onVoiceToggle, onStoryStart, onReplay, onDifficultySelect, onItemSelect, onAnswerSelect }: Props) {
+export function MarketStage({ challenge, customer, completionWasNew, currencyIntroText, currencyIntroRuby, showCurrencyIntro, difficulties, activeDifficulty, completedDifficulties, basket, phase, feedback, total, answerOptions, selectedTotal, hintVisible, renderObjectIcon, renderRubyText, homeIcon, hintIcon, lockIcon, speakerIcon, voiceSupported, voiceSpeaking, voiceMuted, onHome, onHint, onSpeak, onVoiceToggle, onStoryStart, onReplay, onDifficultySelect, onItemSelect, onAnswerSelect, onContinue }: Props) {
   useEffect(() => {
     [marketCheckoutBackground, marketCheckoutBasketArt, marketBasketFrontArt, marketCashRegisterArt, marketCashRegisterSuccessArt, marketCheckoutCabinetArt, customer.image].forEach((source) => {
       const image = new Image();
@@ -154,7 +155,10 @@ export function MarketStage({ challenge, customer, completionWasNew, currencyInt
           {isNumberRecognition ? answerLocked ? <p className="market-number-success">一個一個數，全部數對了！</p> : <div className="market-number-question" aria-label={initialCheckoutPrompt}>{numberRecognitionItem ? <><span className="market-number-prompt">籃子裡有幾{marketItemSpeech[numberRecognitionItem.assetId]?.counter ?? "個"}</span><span className="market-number-subject">{renderObjectIcon(numberRecognitionItem.assetId, true)}<b>{assets[numberRecognitionItem.assetId].label}</b><strong aria-hidden="true">？</strong></span></> : <span className="market-number-prompt">籃子裡一共有幾個商品？</span>}</div> : <div className={`market-equation ${calculationTerms.length > 2 ? "market-equation-dense" : ""}`} aria-label="商品算式">{calculationTerms.map((term, index) => <span className="market-equation-part" key={term.key}>{index > 0 && <em aria-hidden="true">+</em>}<span>{renderObjectIcon(term.assetId, true)}<b>{assets[term.assetId].label}</b><strong>{term.price} 貝{usesMultiplication && term.count > 1 ? ` × ${term.count}` : ""}</strong></span></span>)}{!answerLocked && <span className="market-equation-result"><em aria-hidden="true">=</em><strong className="market-equation-answer">{selectedTotal ?? "?"}</strong></span>}</div>}
           {!answerLocked && <p className="market-register-feedback" aria-live="polite">{hintVisible ? (isNumberRecognition ? "跟著亮光，一個一個數" : "跟著亮光，一個一個算") : checkoutFeedback || (isNumberRecognition ? "選出正確的數字" : "選出正確的總價")}</p>}
         </div>
-        <div className={`market-answer-options market-register-keys ${answerLocked ? "market-register-keys-correct" : ""}`}>{visibleAnswerOptions.map((value) => <button className={`market-answer-button ${selectedTotal === value ? "selected" : ""} ${selectedTotal === value && value !== total ? "wrong" : ""} ${selectedTotal === value && value === total ? "correct" : ""}`} type="button" key={value} onClick={() => onAnswerSelect(value)} aria-label={`選擇 ${value}${isNumberRecognition ? " 個" : " 貝"}`} disabled={answerLocked}><strong>{value}</strong>{!isNumberRecognition && <span>貝</span>}</button>)}</div>
+        <div className={`market-answer-options market-register-keys ${answerLocked ? "market-register-keys-correct" : ""}`}>
+          {visibleAnswerOptions.map((value) => <button className={`market-answer-button ${selectedTotal === value ? "selected" : ""} ${selectedTotal === value && value !== total ? "wrong" : ""} ${selectedTotal === value && value === total ? "correct" : ""}`} type="button" key={value} onClick={() => onAnswerSelect(value)} aria-label={`選擇 ${value}${isNumberRecognition ? " 個" : " 貝"}`} disabled={answerLocked}><strong>{value}</strong>{!isNumberRecognition && <span>貝</span>}</button>)}
+          {answerLocked && <button className="market-next-order-button" type="button" aria-label="前往下一關" onClick={onContinue}><span>前往</span><strong>下一關</strong></button>}
+        </div>
       </section>
       <img className="market-checkout-cabinet" src={marketCheckoutCabinetArt} alt="" aria-hidden="true" />
     </div>}

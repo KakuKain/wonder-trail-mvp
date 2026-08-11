@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { marketCustomerForRound } from "../../data/marketCustomers";
 import { stages } from "../../data/stages";
 import { marketAnswerOptions, marketQuestionValue } from "../../lib/market";
@@ -53,6 +53,7 @@ describe("MarketStage feedback", () => {
       onDifficultySelect={() => undefined}
       onItemSelect={() => undefined}
       onAnswerSelect={() => undefined}
+      onContinue={() => undefined}
     />);
 
     expect(screen.getByRole("button", { name: "提示" }).getAttribute("aria-pressed")).toBe("true");
@@ -103,10 +104,61 @@ describe("MarketStage feedback", () => {
       onDifficultySelect={() => undefined}
       onItemSelect={() => undefined}
       onAnswerSelect={() => undefined}
+      onContinue={() => undefined}
     />);
 
     const customerSpeechButton = screen.getByRole("button", { name: "聲音已關閉" });
     expect(customerSpeechButton.hasAttribute("disabled")).toBe(true);
     expect(screen.getByRole("button", { name: "開啟聲音" }).getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("shows a manual next-level button after the correct answer", () => {
+    const puzzle = stages.find((stage) => stage.mechanic === "market")?.marketPuzzle;
+    const challenge = puzzle?.challenges.find((item) => item.difficulty === "beginner");
+    if (!puzzle || !challenge) throw new Error("Expected beginner market data");
+    const total = marketQuestionValue(challenge, "number-recognition");
+    const onContinue = vi.fn();
+
+    render(<MarketStage
+      challenge={challenge}
+      customer={marketCustomerForRound("beginner", 0)}
+      completionWasNew={false}
+      currencyIntroText=""
+      currencyIntroRuby={[]}
+      showCurrencyIntro={false}
+      difficulties={puzzle.difficulties}
+      activeDifficulty="beginner"
+      completedDifficulties={[]}
+      basket={Object.fromEntries(challenge.order.map((item) => [item.assetId, item.count]))}
+      phase="total"
+      feedback={`謝謝小航！一共有 ${total} 個，你數對了！`}
+      total={total}
+      answerOptions={marketAnswerOptions(total, challenge.id)}
+      selectedTotal={total}
+      hintVisible={false}
+      renderObjectIcon={(assetId) => <span className="object-icon">{assetId}</span>}
+      renderRubyText={(segments: RubySegment[]) => segments.map((segment) => typeof segment === "string" ? segment : segment.text).join("")}
+      homeIcon={<span aria-hidden="true">家</span>}
+      hintIcon={<span aria-hidden="true">提示</span>}
+      lockIcon={<span aria-hidden="true">鎖</span>}
+      speakerIcon={<span aria-hidden="true">播放</span>}
+      voiceSupported
+      voiceSpeaking={false}
+      voiceMuted={false}
+      onHome={() => undefined}
+      onHint={() => undefined}
+      onSpeak={() => undefined}
+      onVoiceToggle={() => undefined}
+      onStoryStart={() => undefined}
+      onReplay={() => undefined}
+      onDifficultySelect={() => undefined}
+      onItemSelect={() => undefined}
+      onAnswerSelect={() => undefined}
+      onContinue={onContinue}
+    />);
+
+    const nextButton = screen.getByRole("button", { name: "前往下一關" });
+    fireEvent.click(nextButton);
+    expect(onContinue).toHaveBeenCalledTimes(1);
   });
 });

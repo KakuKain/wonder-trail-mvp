@@ -2,7 +2,7 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stages } from "../data/stages";
-import { marketCustomersPerShift, marketOrderSignature, marketSuccessDelayMs } from "../lib/market";
+import { marketCustomersPerShift, marketOrderSignature } from "../lib/market";
 import { resetSave } from "../lib/storage";
 import { useGameController } from "./useGameController";
 
@@ -31,10 +31,8 @@ function fillCurrentOrder(controller: ReturnType<typeof renderMarketController>)
 
 function finishCurrentMarketOrder(controller: ReturnType<typeof renderMarketController>) {
   const question = fillCurrentOrder(controller);
-  act(() => {
-    controller.result.current.actions.answerMarket(question);
-    vi.advanceTimersByTime(marketSuccessDelayMs);
-  });
+  act(() => controller.result.current.actions.answerMarket(question));
+  act(() => controller.result.current.actions.continueMarket());
 }
 
 function finishFirstForestStage(controller: ReturnType<typeof renderMarketController>) {
@@ -151,25 +149,28 @@ describe("game controller market timers", () => {
     }
   });
 
-  it("moves to the next order only once when a correct answer is pressed twice", () => {
+  it("waits for the child to continue after a correct answer and advances only once", () => {
     const controller = renderMarketController();
     const question = fillCurrentOrder(controller);
 
     act(() => {
       controller.result.current.actions.answerMarket(question);
       controller.result.current.actions.answerMarket(question);
-      vi.advanceTimersByTime(marketSuccessDelayMs - 1);
+      vi.advanceTimersByTime(10_000);
     });
 
     expect(controller.result.current.marketChallengeIndex).toBe(0);
     expect(controller.result.current.view.market.phase).toBe("total");
+    expect(controller.result.current.marketSelectedTotal).toBe(question);
+    expect(controller.result.current.marketFeedback).toBe(`謝謝小航！一共有 ${question} 個，你數對了！`);
+    expect(controller.result.current.hintVisible).toBe(false);
 
-    act(() => vi.advanceTimersByTime(1));
+    act(() => {
+      controller.result.current.actions.continueMarket();
+      controller.result.current.actions.continueMarket();
+    });
     expect(controller.result.current.marketChallengeIndex).toBe(1);
     expect(controller.result.current.save.marketProgress.nextChallengeByDifficulty).toEqual({ beginner: 1 });
-
-    act(() => vi.advanceTimersByTime(2_000));
-    expect(controller.result.current.marketChallengeIndex).toBe(1);
   });
 
   it("ignores another answer while a correct checkout is pending", () => {
@@ -185,7 +186,10 @@ describe("game controller market timers", () => {
     expect(controller.result.current.marketFeedback).toBe(`謝謝小航！一共有 ${question} 個，你數對了！`);
     expect(controller.result.current.wrongClicks).toBe(0);
 
-    act(() => vi.advanceTimersByTime(marketSuccessDelayMs));
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(controller.result.current.marketChallengeIndex).toBe(0);
+
+    act(() => controller.result.current.actions.continueMarket());
     expect(controller.result.current.marketChallengeIndex).toBe(1);
   });
 
