@@ -319,4 +319,46 @@ describe("game controller market timers", () => {
     expect([...replayIndexes].sort((left, right) => left - right)).toEqual([0, 1, 2, 3, 4]);
     expect(controller.result.current.screen).toBe("complete");
   });
+
+  it("lets a child retry a wrong zhuyin choice and continue manually", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    act(() => controller.result.current.startStage(6));
+
+    const firstPuzzle = controller.result.current.view.zhuyin.puzzle;
+    if (!firstPuzzle) throw new Error("Expected a zhuyin puzzle");
+    const correct = firstPuzzle.answer[0];
+    const wrong = firstPuzzle.choices.find((choice) => choice !== correct);
+    if (!wrong) throw new Error("Expected a wrong zhuyin choice");
+
+    act(() => controller.result.current.actions.answerZhuyin(wrong));
+    expect(controller.result.current.view.zhuyin.questionIndex).toBe(0);
+    expect(controller.result.current.view.zhuyin.selectedAnswer).toBe(wrong);
+    expect(controller.result.current.screen).toBe("stage");
+
+    act(() => controller.result.current.actions.answerZhuyin(correct));
+    expect(controller.result.current.view.zhuyin.selectedAnswer).toBe(correct);
+    expect(controller.result.current.view.zhuyin.totalQuestions).toBe(3);
+    expect(controller.result.current.view.zhuyin.questionIndex).toBe(0);
+
+    act(() => controller.result.current.actions.continueZhuyin());
+    expect(controller.result.current.view.zhuyin.questionIndex).toBe(1);
+    expect(controller.result.current.view.zhuyin.selectedAnswer).toBeNull();
+  });
+
+  it("finishes the school task only after the last answer is continued", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    act(() => controller.result.current.startStage(6));
+
+    for (let index = 0; index < 3; index += 1) {
+      const puzzle = controller.result.current.view.zhuyin.puzzle;
+      if (!puzzle) throw new Error("Expected a zhuyin puzzle");
+      act(() => controller.result.current.actions.answerZhuyin(puzzle.answer[0]));
+      expect(controller.result.current.screen).toBe("stage");
+      act(() => controller.result.current.actions.continueZhuyin());
+    }
+
+    expect(controller.result.current.screen).toBe("complete");
+    expect(controller.result.current.lastCompletionWasNew).toBe(true);
+    expect(controller.result.current.save.completedStageIds).toContain("school_zhuyin_01");
+  });
 });

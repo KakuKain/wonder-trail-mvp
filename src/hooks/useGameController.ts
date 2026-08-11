@@ -10,6 +10,7 @@ import { VoiceQueue } from "../lib/voiceEngine";
 import { useForestFlow } from "./useForestFlow";
 import { useGameState } from "./useGameState";
 import { useMarketFlow } from "./useMarketFlow";
+import { useZhuyinFlow } from "./useZhuyinFlow";
 
 const voiceMutedStorageKey = "wonder-trail:voice-muted";
 
@@ -78,9 +79,11 @@ export function useGameController(totalStages: number) {
 
   const forest = useForestFlow({ game, logEvent, speak, persistSave });
   const market = useMarketFlow({ game, logEvent, speak, persistSave });
+  const zhuyin = useZhuyinFlow({ game, logEvent, speak, persistSave });
   const { completeStage, selectForestObject, showForestHint, stageStartedAt } = forest;
   const { clearMarketTimers, view: marketView, actions: marketActions } = market;
   const { answerMarket, continueMarket, selectMarketDifficulty, selectMarketItem, showMarketHint, startMarketShift } = marketActions;
+  const { clearZhuyinTimers, view: zhuyinView, actions: zhuyinActions } = zhuyin;
   const stage = stages[game.stageIndex];
 
   const startStage = useCallback((index: number) => {
@@ -93,6 +96,7 @@ export function useGameController(totalStages: number) {
     const initial = getStageInitialState(nextStage, game.save.marketProgress);
 
     clearMarketTimers();
+    clearZhuyinTimers();
     stageStartedAt.current = Date.now();
     game.setStageIndex(index);
     game.setStageBackgroundReady(initial.stageBackgroundReady);
@@ -116,12 +120,15 @@ export function useGameController(totalStages: number) {
     game.setMarketBasket({});
     game.setMarketSelectedTotal(null);
     game.setMarketFeedback("");
+    game.setZhuyinQuestionIndex(0);
+    game.setZhuyinSelectedAnswer(null);
+    game.setZhuyinFeedback("");
     game.setScreen("stage");
     logEvent("stage_start", nextStage.id, { difficulty: nextStage.difficulty });
     speak(nextStage.instructionText, { tone: "neutral", delayMs: 500 });
-  }, [clearMarketTimers, game, logEvent, speak, stageStartedAt]);
+  }, [clearMarketTimers, clearZhuyinTimers, game, logEvent, speak, stageStartedAt]);
 
-  const startWorld = useCallback((world: "forest" | "market") => {
+  const startWorld = useCallback((world: "forest" | "market" | "school") => {
     const worldStageIndexes = stages.flatMap((item, index) => item.world === world ? [index] : []);
     const index = worldStageIndexes.find((stageIndex) => !game.save.completedStageIds.includes(stages[stageIndex].id));
     if (world === "forest" && index === undefined) {
@@ -168,6 +175,7 @@ export function useGameController(totalStages: number) {
 
   const resetProgress = useCallback(() => {
     clearMarketTimers();
+    clearZhuyinTimers();
     cancelSpeech();
     clearMarketRoundSession();
     clearMarketStorySeen();
@@ -194,14 +202,18 @@ export function useGameController(totalStages: number) {
     game.setMarketBasket({});
     game.setMarketSelectedTotal(null);
     game.setMarketFeedback("");
+    game.setZhuyinQuestionIndex(0);
+    game.setZhuyinSelectedAnswer(null);
+    game.setZhuyinFeedback("");
     forestReplayRoute.current = [];
     forestReplayPosition.current = 0;
     game.setScreen("intro");
     logEvent("progress_reset");
-  }, [cancelSpeech, clearMarketTimers, game, logEvent]);
+  }, [cancelSpeech, clearMarketTimers, clearZhuyinTimers, game, logEvent]);
 
   const returnHome = useCallback(() => {
     clearMarketTimers();
+    clearZhuyinTimers();
     cancelSpeech();
     if (game.screen === "stage") {
       const foundTargets = game.objects.filter((object) => object.isTarget && object.found).length;
@@ -210,12 +222,13 @@ export function useGameController(totalStages: number) {
     }
     game.setHintVisible(false);
     game.setScreen("intro");
-  }, [cancelSpeech, clearMarketTimers, game, logEvent, stage.id, stageStartedAt]);
+  }, [cancelSpeech, clearMarketTimers, clearZhuyinTimers, game, logEvent, stage.id, stageStartedAt]);
 
   const showHint = useCallback(() => {
     if (stage.mechanic === "market") showMarketHint();
+    else if (stage.mechanic === "zhuyin") zhuyinActions.showZhuyinHint();
     else showForestHint();
-  }, [showForestHint, showMarketHint, stage.mechanic]);
+  }, [showForestHint, showMarketHint, stage.mechanic, zhuyinActions]);
 
   useEffect(() => {
     logEvent("session_start", undefined, { totalStages });
@@ -240,12 +253,14 @@ export function useGameController(totalStages: number) {
     objects: game.objects,
     progress: { completedStageCount, totalStages, percent: Math.round((completedStageCount / totalStages) * 100) },
     market: marketView,
+    zhuyin: zhuyinView,
     collection: { open: game.collectionOpen, page: game.collectionPage },
     voice: { supported: voiceSupported, speaking: voiceSpeaking, muted: voiceMuted },
   };
   const actions = {
     startForest: () => startWorld("forest"),
     startMarket: () => startWorld("market"),
+    startSchool: () => startWorld("school"),
     resetProgress,
     persistSave,
     completeStage,
@@ -257,6 +272,9 @@ export function useGameController(totalStages: number) {
     selectMarketItem,
     answerMarket,
     continueMarket,
+    answerZhuyin: zhuyinActions.answerZhuyin,
+    continueZhuyin: zhuyinActions.continueZhuyin,
+    showZhuyinHint: zhuyinActions.showZhuyinHint,
     continueForestAdventure,
     toggleVoice,
     returnHome,

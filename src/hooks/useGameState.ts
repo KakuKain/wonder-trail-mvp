@@ -50,6 +50,9 @@ export function useGameState() {
   const [marketBasket, setMarketBasket] = useState<Record<string, number>>(restoredMarketRound?.basket ?? {});
   const [marketSelectedTotal, setMarketSelectedTotal] = useState<number | null>(null);
   const [marketFeedback, setMarketFeedback] = useState(restoredMarketRound?.feedback ?? "");
+  const [zhuyinQuestionIndex, setZhuyinQuestionIndex] = useState(0);
+  const [zhuyinSelectedAnswer, setZhuyinSelectedAnswer] = useState<string | null>(null);
+  const [zhuyinFeedback, setZhuyinFeedback] = useState("");
 
   useEffect(() => {
     const stage = stages[stageIndex];
@@ -89,5 +92,7 @@ export function useGameState() {
     marketRecentCorrectPositions, setMarketRecentCorrectPositions,
     marketPhase, setMarketPhase, marketBasket, setMarketBasket,
     marketSelectedTotal, setMarketSelectedTotal, marketFeedback, setMarketFeedback,
+    zhuyinQuestionIndex, setZhuyinQuestionIndex, zhuyinSelectedAnswer, setZhuyinSelectedAnswer,
+    zhuyinFeedback, setZhuyinFeedback,
   };
 }

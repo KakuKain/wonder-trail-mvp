@@ -42,6 +42,7 @@ export type RewardConfig = {
 };
 
 export type ZhuyinPuzzleConfig = {
+  imageAssetId: string;
   word: string;
   wordRuby: string;
   answer: string[];
@@ -102,7 +103,7 @@ export type MarketProgress = {
 
 export type StageConfig = {
   id: string;
-  world: "forest" | "market";
+  world: "forest" | "market" | "school";
   mechanic: "search" | "market" | "zhuyin";
   difficulty: number;
   storyText: string;
@@ -114,6 +115,7 @@ export type StageConfig = {
   targets?: StageObjectConfig[];
   distractors?: StageObjectConfig[];
   zhuyinPuzzle?: ZhuyinPuzzleConfig;
+  zhuyinPuzzles?: ZhuyinPuzzleConfig[];
   marketPuzzle?: MarketPuzzleConfig;
   assist: AssistConfig;
   reward: RewardConfig;

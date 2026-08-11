@@ -17,6 +17,7 @@ type Props = {
   hasProgress: boolean;
   forestPartAcquired: boolean;
   marketPartAcquired: boolean;
+  schoolPartAcquired?: boolean;
   mapArt: string;
   planeArt: string;
   characterArt: string;
@@ -30,7 +31,7 @@ type Props = {
 };
 
 export function MapScreen({
-  chapters, hasProgress, forestPartAcquired, marketPartAcquired, mapArt, planeArt, characterArt,
+  chapters, hasProgress, forestPartAcquired, marketPartAcquired, schoolPartAcquired = false, mapArt, planeArt, characterArt,
   headline, body, replayIcon, lockIcon, onMapReady, onReset, onChapterSelect,
 }: Props) {
   const [resetConfirmationOpen, setResetConfirmationOpen] = useState(false);
@@ -45,7 +46,7 @@ export function MapScreen({
             <div className="island-core">
               <img className="map-plane-hotspot" src={planeArt} alt="" aria-hidden="true" />
               {chapters.map((chapter) => {
-                const partAcquired = chapter.id === "search" ? forestPartAcquired : chapter.id === "math" && marketPartAcquired;
+                const partAcquired = chapter.id === "search" ? forestPartAcquired : chapter.id === "math" ? marketPartAcquired : chapter.id === "zhuyin" && schoolPartAcquired;
                 return <button className={`map-node ${chapter.className} ${chapter.playable ? "map-node-playable" : "map-node-locked"} ${partAcquired ? "map-node-completed" : ""}`} key={chapter.id} type="button" style={{ "--map-x": `${chapter.position.x}%`, "--map-y": `${chapter.position.y}%`, "--map-width": `${chapter.position.width}%` } as CSSProperties} aria-label={`${chapter.place}，零件 ${chapter.part}${partAcquired ? "，已取得" : ""}，${chapter.mechanic}。${chapter.story}`} onClick={() => onChapterSelect(chapter.id, chapter.playable)}>
                   <img className="map-hotspot-image" src={chapter.image} alt="" aria-hidden="true" />
                   <span className="part-badge">{chapter.part}</span>

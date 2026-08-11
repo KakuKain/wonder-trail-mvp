@@ -5109,3 +5109,253 @@ p {
     width: 100%;
   }
 }
+
+/* School phonics stage: calm, spacious controls sized for preschool hands. */
+.zhuyin-stage-layout {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 251, 220, 0.9), transparent 34%),
+    linear-gradient(180deg, #bfe5e4 0%, #e9f0d4 45%, #f3d6a3 100%);
+}
+
+.zhuyin-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: clamp(82px, 12svh, 116px) 16px 28px;
+  color: #493527;
+}
+
+.zhuyin-toolbar {
+  top: max(14px, env(safe-area-inset-top));
+}
+
+.zhuyin-header {
+  width: min(680px, 100%);
+  margin: 0 auto 18px;
+  text-align: center;
+}
+
+.zhuyin-header .eyebrow {
+  margin: 0 0 4px;
+  color: #4f8065;
+  font-weight: 900;
+}
+
+.zhuyin-header h2 {
+  margin: 0;
+  color: #493527;
+  font-size: clamp(1.5rem, 5.5vw, 2.35rem);
+  line-height: 1.2;
+}
+
+.zhuyin-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(320px, 86%);
+  margin: 14px auto 0;
+  color: #5f7f5a;
+  font-weight: 900;
+}
+
+.zhuyin-progress-track {
+  display: block;
+  flex: 1;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 1px 3px rgba(64, 77, 44, 0.18);
+}
+
+.zhuyin-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #79a96b;
+  transition: width 240ms ease;
+}
+
+.zhuyin-card {
+  width: min(680px, 100%);
+  padding: clamp(18px, 4vw, 30px);
+  border: 4px solid #96704c;
+  border-radius: 30px;
+  background: rgba(255, 250, 224, 0.94);
+  box-shadow: 0 8px 0 rgba(106, 71, 36, 0.18), 0 18px 36px rgba(88, 73, 37, 0.16);
+  text-align: center;
+}
+
+.zhuyin-picture-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: clamp(170px, 27svh, 250px);
+  margin-bottom: 10px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #e4f0cb, #f9e4aa);
+  box-shadow: inset 0 -6px 0 rgba(121, 169, 107, 0.18);
+}
+
+.zhuyin-picture {
+  display: grid;
+  place-items: center;
+  width: clamp(126px, 30vw, 190px);
+  height: clamp(126px, 30vw, 190px);
+  border-radius: 50%;
+  background: rgba(255, 255, 244, 0.62);
+}
+
+.zhuyin-picture .object-icon {
+  width: 78%;
+  height: 78%;
+}
+
+.zhuyin-audio-button {
+  position: absolute;
+  right: clamp(10px, 4vw, 24px);
+  bottom: clamp(10px, 3vw, 20px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 50px;
+  padding: 8px 14px;
+  border: 3px solid #a57938;
+  border-radius: 999px;
+  color: #5b3b27;
+  background: #ffdc72;
+  box-shadow: 0 4px 0 rgba(112, 71, 25, 0.2);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.zhuyin-audio-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+.zhuyin-word-block {
+  margin: 12px 0 18px;
+}
+
+.zhuyin-helper {
+  margin: 0 0 5px;
+  color: #608466;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.zhuyin-word-block h3 {
+  margin: 0;
+  color: #493527;
+  font-size: clamp(2rem, 8vw, 3.3rem);
+  line-height: 1.22;
+}
+
+.zhuyin-question {
+  margin: 8px 0 0;
+  color: #6c513c;
+  font-size: clamp(1.2rem, 4.5vw, 1.6rem);
+  font-weight: 900;
+}
+
+.zhuyin-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.zhuyin-choice-button {
+  min-height: 76px;
+  padding: 10px 8px;
+  border: 4px solid #9b713d;
+  border-radius: 20px;
+  color: #593a25;
+  background: #fff0b2;
+  box-shadow: 0 5px 0 rgba(112, 71, 25, 0.2);
+  font-family: var(--ui-number-font);
+  font-size: clamp(1.35rem, 6vw, 2rem);
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.zhuyin-choice-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(112, 71, 25, 0.2);
+}
+
+.zhuyin-choice-button.wrong {
+  color: #805d50;
+  background: #f4e3d4;
+  border-color: #c9a89a;
+}
+
+.zhuyin-choice-button.correct {
+  color: #315e40;
+  background: #cdeaa9;
+  border-color: #6ca46c;
+  box-shadow: 0 5px 0 rgba(68, 120, 69, 0.22), 0 0 0 6px rgba(130, 196, 111, 0.18);
+}
+
+.zhuyin-feedback {
+  min-height: 1.6em;
+  margin: 14px 0 10px;
+  color: #5d7959;
+  font-size: clamp(1rem, 3.5vw, 1.25rem);
+  font-weight: 900;
+}
+
+.zhuyin-feedback.retry { color: #946b4f; }
+.zhuyin-feedback.success { color: #377449; }
+
+.zhuyin-next-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: min(360px, 100%);
+  min-height: 64px;
+  padding: 10px 20px;
+  border: 4px solid #6b923f;
+  border-radius: 18px;
+  color: #fffdf0;
+  background: #78a852;
+  box-shadow: 0 5px 0 rgba(67, 104, 45, 0.25);
+  font-size: clamp(1.2rem, 4.5vw, 1.55rem);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.complete-school-reward {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 160px;
+  border: 8px solid #8cbf70;
+  border-radius: 50%;
+  background: rgba(239, 255, 203, 0.92);
+  box-shadow: 0 0 0 14px rgba(150, 207, 121, 0.2), 0 12px 22px rgba(63, 85, 35, 0.22);
+  transform: translateX(-50%);
+}
+
+.complete-school-reward .object-icon {
+  width: 104px;
+  height: 104px;
+}
+
+@media (max-width: 480px) {
+  .zhuyin-stage { padding-inline: 10px; }
+  .zhuyin-card { border-width: 3px; border-radius: 24px; }
+  .zhuyin-choice-grid { gap: 8px; }
+  .zhuyin-choice-button { min-height: 68px; border-width: 3px; border-radius: 16px; }
+  .zhuyin-audio-button span { display: none; }
+}

@@ -12,6 +12,7 @@ import { CollectionBookModal } from "./components/screens/CollectionBookModal";
 import { CompleteScreen } from "./components/screens/CompleteScreen";
 import { ForestStage } from "./components/screens/ForestStage";
 import { MarketStage } from "./components/screens/MarketStage";
+import { ZhuyinStage } from "./components/screens/ZhuyinStage";
 import { preloadMarketStoryAssets } from "./components/screens/marketStoryAssets";
 import { RewardScreen } from "./components/screens/RewardScreen";
 import type {
@@ -62,7 +63,7 @@ const chapters = [
     className: "school-node",
     image: schoolHotspot,
     position: { x: 37.0, y: 55.4, width: 18.2 },
-    playable: false,
+    playable: true,
   },
   {
     id: "matching",
@@ -113,6 +114,9 @@ export function App() {
   const marketPartAcquired = save.completedStageIds.some((stageId) =>
     stages.some((candidate) => candidate.id === stageId && candidate.world === "market")
   ) || save.marketProgress.completedDifficulties.includes("advanced");
+  const schoolPartAcquired = save.completedStageIds.some((stageId) =>
+    stages.some((candidate) => candidate.id === stageId && candidate.world === "school")
+  );
   const hasProgress = save.completedStageIds.length > 0
     || save.marketProgress.completedChallengeIds.length > 0;
 
@@ -177,7 +181,7 @@ export function App() {
       {screen === "intro" && (
         <MapScreen
           chapters={chapters} hasProgress={hasProgress} forestPartAcquired={forestPartAcquired}
-          marketPartAcquired={marketPartAcquired} mapArt={homeSeaMap} planeArt={planeHotspot}
+          marketPartAcquired={marketPartAcquired} schoolPartAcquired={schoolPartAcquired} mapArt={homeSeaMap} planeArt={planeHotspot}
           characterArt={xiaohangFox} replayIcon={<ReplayIcon />} lockIcon={<LockIcon />}
           onMapReady={() => setHomeMapReady(true)} onReset={actions.resetProgress}
           headline={<HeadingWithAudio segments={dialogue.chapterSelectHeadline} speakText="飛機壞掉了！先去森林找零件。" onSpeak={speak} />}
@@ -185,14 +189,15 @@ export function App() {
           onChapterSelect={(chapterId, playable) => {
             if (chapterId === "search") return actions.startForest();
             if (chapterId === "math" && playable) return actions.startMarket();
+            if (chapterId === "zhuyin" && playable) return actions.startSchool();
             if (!playable) speak(`${chapters.find((chapter) => chapter.id === chapterId)?.place ?? "這個地方"}會在下一版開放。`);
           }}
         />
       )}
 
       {screen === "stage" && (
-        <section className={`stage-layout ${stage.mechanic === "market" ? "market-stage-layout" : ""}`}>
-          {stage.mechanic !== "market" && (
+        <section className={`stage-layout ${stage.mechanic === "market" ? "market-stage-layout" : ""} ${stage.mechanic === "zhuyin" ? "zhuyin-stage-layout" : ""}`}>
+          {stage.mechanic === "search" && (
             <aside className="story-panel">
               <div className="stage-guide-character" aria-hidden="true">
                 <img src={xiaohangFox} alt="" />
@@ -244,6 +249,28 @@ export function App() {
               onItemSelect={actions.selectMarketItem}
               onAnswerSelect={actions.answerMarket}
               onContinue={actions.continueMarket}
+            />
+          ) : stage.mechanic === "zhuyin" && view.zhuyin.puzzle ? (
+            <ZhuyinStage
+              puzzle={view.zhuyin.puzzle}
+              questionIndex={view.zhuyin.questionIndex}
+              totalQuestions={view.zhuyin.totalQuestions}
+              selectedAnswer={view.zhuyin.selectedAnswer}
+              feedback={view.zhuyin.feedback}
+              hintVisible={hintVisible}
+              renderObjectIcon={(assetId) => <ObjectIcon assetId={assetId} />}
+              renderRubyText={(segments) => <RubyText segments={segments} />}
+              homeIcon={<HomeIcon />}
+              hintIcon={<LightbulbIcon />}
+              speakerIcon={<SpeakerIcon />}
+              voiceSupported={view.voice.supported}
+              voiceMuted={view.voice.muted}
+              onHome={actions.returnHome}
+              onHint={actions.showHint}
+              onSpeak={speak}
+              onVoiceToggle={actions.toggleVoice}
+              onAnswer={actions.answerZhuyin}
+              onContinue={actions.continueZhuyin}
             />
           ) : (
             <ForestStage
@@ -334,18 +361,19 @@ export function App() {
           </div>}
           partReward={stage.world === "forest" && !lastCompletionWasNew ? (
             <div className="complete-replay-mark" aria-label="再次通關"><span>✓</span></div>
-          ) : <div className="complete-part-reward" aria-label="取得金色螺旋槳零件">
+          ) : stage.world === "school" ? <div className="complete-school-reward" aria-label={lastCompletionWasNew ? "取得學校任務貼紙" : "再次完成學校任務"}><ObjectIcon assetId={rewardAssetId} /></div>
+          : <div className="complete-part-reward" aria-label="取得金色螺旋槳零件">
             <span className="complete-part-glow" aria-hidden="true" />
             <img src={planePartReward} alt="" aria-hidden="true" />
           </div>}
           caption={<div className="complete-caption">
             <div>
               <HeadingWithAudio
-                segments={stage.world === "forest" && !lastCompletionWasNew ? ["恭喜再次通關！"] : dialogue.completeHeadline}
-                speakText={stage.world === "forest" && !lastCompletionWasNew ? "恭喜再次通關！" : "今天的森林書完成囉！"}
+                segments={stage.world === "forest" && !lastCompletionWasNew ? ["恭喜再次通關！"] : stage.world === "school" ? (lastCompletionWasNew ? ["注音小達人！"] : ["再次完成學校任務！"]) : dialogue.completeHeadline}
+                speakText={stage.world === "forest" && !lastCompletionWasNew ? "恭喜再次通關！" : stage.world === "school" ? (lastCompletionWasNew ? "注音小達人！" : "再次完成學校任務！") : "今天的森林書完成囉！"}
                 onSpeak={speak}
               />
-              <p><RubyText segments={stage.world === "forest" && !lastCompletionWasNew ? ["小航很開心，再一起找找看吧！"] : dialogue.completeSummary()} /></p>
+              <p><RubyText segments={stage.world === "forest" && !lastCompletionWasNew ? ["小航很開心，再一起找找看吧！"] : stage.world === "school" ? [lastCompletionWasNew ? "你幫老師找到了正確的聲音！" : "你又把聲音找對了！"] : dialogue.completeSummary()} /></p>
             </div>
           </div>}
           modal={collectionOpen && (
