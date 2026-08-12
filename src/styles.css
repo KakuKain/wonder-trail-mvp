@@ -1300,7 +1300,7 @@ p {
   border: 0;
   border-radius: 0;
   color: #3f2a1d;
-  background: url("./assets/market/comic-bubble-right-v1.webp") center / 100% 100% no-repeat;
+  background: url("./assets/market/comic-bubble-right-v2.webp") center / 100% 100% no-repeat;
   box-shadow: none;
   font-size: clamp(1rem, 4vw, 1.08rem);
   font-weight: 900;
@@ -1324,7 +1324,7 @@ p {
   left: 10px;
   width: 89%;
   padding: 17px 26% 19px 10%;
-  background-image: url("./assets/market/comic-bubble-urgent-right-v1.webp");
+  background-image: url("./assets/market/comic-bubble-urgent-right-v2.webp");
   font-size: clamp(1rem, 4vw, 1.08rem);
   transform: rotate(-1.2deg);
 }
@@ -1350,7 +1350,7 @@ p {
   left: 12px;
   width: min(57%, 350px);
   padding: 19px 24% 19px 10%;
-  background-image: url("./assets/market/comic-bubble-right-v1.webp");
+  background-image: url("./assets/market/comic-bubble-right-v2.webp");
   font-size: clamp(1rem, 4.2vw, 1.12rem);
   transform: rotate(-0.45deg);
 }
@@ -5139,6 +5139,47 @@ p {
   text-align: center;
 }
 
+.level-select-header p:last-child {
+  margin: 10px 0 0;
+  color: #66806c;
+  font-weight: 800;
+}
+
+.zhuyin-level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  width: min(680px, 100%);
+}
+
+.zhuyin-level-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  min-height: 205px;
+  padding: 20px 14px 16px;
+  border: 4px solid #789b72;
+  border-radius: 26px;
+  color: #493527;
+  background: rgba(255, 250, 224, 0.96);
+  box-shadow: 0 7px 0 rgba(80, 105, 66, 0.2), 0 15px 28px rgba(67, 86, 52, 0.13);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.zhuyin-level-card.level-2 { border-color: #659aa8; background: #eefbfa; }
+.zhuyin-level-card.level-3 { border-color: #c79049; background: #fff7d6; }
+.zhuyin-level-card.level-4 { border-color: #8d76ad; background: #f8f0ff; }
+.zhuyin-level-card:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(80, 105, 66, 0.2); }
+.zhuyin-level-number { position: absolute; top: 10px; left: 12px; color: #59725c; font-size: .82rem; font-weight: 900; }
+.zhuyin-level-icon { font-size: 2.7rem; line-height: 1; }
+.zhuyin-level-card strong { font-size: clamp(1.2rem, 4vw, 1.55rem); }
+.zhuyin-level-card > span:not(.zhuyin-level-number):not(.zhuyin-level-icon) { color: #657261; font-weight: 800; }
+.zhuyin-level-card small { margin-top: auto; padding: 4px 12px; border-radius: 99px; color: #526756; background: rgba(255,255,255,.7); font-weight: 900; }
+.zhuyin-level-back { margin-bottom: 4px; border: 0; color: #547b64; background: transparent; font: inherit; font-weight: 900; cursor: pointer; }
+
 .zhuyin-header .eyebrow {
   margin: 0 0 4px;
   color: #4f8065;
@@ -5256,6 +5297,24 @@ p {
   line-height: 1.22;
 }
 
+.zhuyin-reveal { margin-top: 4px; color: #52725d; font-size: 1.1rem; font-weight: 900; }
+
+.zhuyin-build-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 76px;
+  margin: 4px 0 18px;
+  padding: 10px;
+  border: 3px dashed #9cb58a;
+  border-radius: 20px;
+  background: #f5f8dc;
+}
+.zhuyin-build-zone > span { display: grid; place-items: center; min-width: 60px; min-height: 52px; padding: 4px 9px; border-radius: 14px; color: #789073; background: white; font-size: 1.4rem; font-weight: 900; }
+.zhuyin-build-zone > span.filled { color: #355e43; background: #d7efb9; }
+.zhuyin-build-zone button { border: 0; color: #765a48; background: transparent; font-weight: 900; text-decoration: underline; cursor: pointer; }
+
 .zhuyin-question {
   margin: 8px 0 0;
   color: #6c513c;
@@ -5302,6 +5361,9 @@ p {
   border-color: #6ca46c;
   box-shadow: 0 5px 0 rgba(68, 120, 69, 0.22), 0 0 0 6px rgba(130, 196, 111, 0.18);
 }
+
+.zhuyin-choice-grid.image-choices .zhuyin-choice-button { min-height: 112px; }
+.zhuyin-choice-grid.image-choices .object-icon { width: 82px; height: 82px; }
 
 .zhuyin-feedback {
   min-height: 1.6em;
@@ -5356,6 +5418,9 @@ p {
   .zhuyin-stage { padding-inline: 10px; }
   .zhuyin-card { border-width: 3px; border-radius: 24px; }
   .zhuyin-choice-grid { gap: 8px; }
+  .zhuyin-level-grid { grid-template-columns: 1fr; }
+  .zhuyin-level-card { min-height: 150px; }
+  .zhuyin-build-zone { flex-wrap: wrap; }
   .zhuyin-choice-button { min-height: 68px; border-width: 3px; border-radius: 16px; }
   .zhuyin-audio-button span { display: none; }
 }

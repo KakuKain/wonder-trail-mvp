@@ -5,16 +5,16 @@ import type { MarketPhase } from "../../hooks/useGameState";
 import type { MarketChallengeConfig, MarketCustomerConfig, MarketDifficultyConfig, MarketDifficultyId, RubySegment } from "../../types";
 import { MarketCompleteScreen } from "./MarketCompleteScreen";
 import { MarketStoryScreen } from "./MarketStoryScreen";
-import marketBasketArt from "../../assets/market/market-basket-v1.webp";
-import marketCheckoutBasketArt from "../../assets/market/market-basket-clean-v1.webp";
+import marketBasketArt from "../../assets/market/market-basket-v2.webp";
+import marketCheckoutBasketArt from "../../assets/market/market-basket-clean-v2.webp";
 import marketBasketFrontArt from "../../assets/market/market-basket-front-v2.webp";
 import marketCashRegisterArt from "../../assets/market/market-cash-register-v2.webp";
-import marketCashRegisterSuccessArt from "../../assets/market/market-cash-register-success-v1.webp";
+import marketCashRegisterSuccessArt from "../../assets/market/market-cash-register-success-v2.webp";
 import marketCheckoutCabinetArt from "../../assets/market/market-checkout-cabinet-v2.webp";
 import marketCheckoutBackground from "../../assets/market/market-checkout-background-v2.webp";
-import marketPriceTagArt from "../../assets/market/market-price-tag-v1.png";
-import marketSignArt from "../../assets/market/market-sign-v1.webp";
-import marketStallBackground from "../../assets/market/market-stall-three-platforms-v1.webp";
+import marketPriceTagArt from "../../assets/market/market-price-tag-v2.png";
+import marketSignArt from "../../assets/market/market-sign-v2.webp";
+import marketStallBackground from "../../assets/market/market-stall-three-platforms-v2.webp";
 
 const shelfPositions: Record<string, { x: number; y: number; rotation: number }> = {
   apple: { x: 24, y: 47.5, rotation: -3 }, pine_cone: { x: 50, y: 47.5, rotation: 2 }, pink_flower: { x: 76, y: 47.5, rotation: -1 }, mushroom: { x: 25, y: 65, rotation: 3 }, acorn: { x: 75, y: 65, rotation: -2 },

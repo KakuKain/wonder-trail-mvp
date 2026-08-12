@@ -323,11 +323,12 @@ describe("game controller market timers", () => {
   it("lets a child retry a wrong zhuyin choice and continue manually", () => {
     const controller = renderHook(() => useGameController(stages.length));
     act(() => controller.result.current.startStage(6));
+    act(() => controller.result.current.actions.selectZhuyinLevel("initial"));
 
-    const firstPuzzle = controller.result.current.view.zhuyin.puzzle;
-    if (!firstPuzzle) throw new Error("Expected a zhuyin puzzle");
-    const correct = firstPuzzle.answer[0];
-    const wrong = firstPuzzle.choices.find((choice) => choice !== correct);
+    const firstQuestion = controller.result.current.view.zhuyin.question;
+    if (!firstQuestion) throw new Error("Expected a zhuyin question");
+    const correct = firstQuestion.answerParts[0];
+    const wrong = firstQuestion.choices.find((choice) => choice !== correct);
     if (!wrong) throw new Error("Expected a wrong zhuyin choice");
 
     act(() => controller.result.current.actions.answerZhuyin(wrong));
@@ -336,7 +337,7 @@ describe("game controller market timers", () => {
     expect(controller.result.current.screen).toBe("stage");
 
     act(() => controller.result.current.actions.answerZhuyin(correct));
-    expect(controller.result.current.view.zhuyin.selectedAnswer).toBe(correct);
+    expect(controller.result.current.view.zhuyin.answerParts).toEqual([correct]);
     expect(controller.result.current.view.zhuyin.totalQuestions).toBe(3);
     expect(controller.result.current.view.zhuyin.questionIndex).toBe(0);
 
@@ -348,11 +349,12 @@ describe("game controller market timers", () => {
   it("finishes the school task only after the last answer is continued", () => {
     const controller = renderHook(() => useGameController(stages.length));
     act(() => controller.result.current.startStage(6));
+    act(() => controller.result.current.actions.selectZhuyinLevel("initial"));
 
     for (let index = 0; index < 3; index += 1) {
-      const puzzle = controller.result.current.view.zhuyin.puzzle;
-      if (!puzzle) throw new Error("Expected a zhuyin puzzle");
-      act(() => controller.result.current.actions.answerZhuyin(puzzle.answer[0]));
+      const question = controller.result.current.view.zhuyin.question;
+      if (!question) throw new Error("Expected a zhuyin question");
+      act(() => controller.result.current.actions.answerZhuyin(question.answerParts[0]));
       expect(controller.result.current.screen).toBe("stage");
       act(() => controller.result.current.actions.continueZhuyin());
     }
@@ -360,5 +362,18 @@ describe("game controller market timers", () => {
     expect(controller.result.current.screen).toBe("complete");
     expect(controller.result.current.lastCompletionWasNew).toBe(true);
     expect(controller.result.current.save.completedStageIds).toContain("school_zhuyin_01");
+  });
+
+  it("builds one syllable in the required order", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    act(() => controller.result.current.startStage(6));
+    act(() => controller.result.current.actions.selectZhuyinLevel("syllable"));
+    const question = controller.result.current.view.zhuyin.question;
+    if (!question) throw new Error("Expected a zhuyin question");
+
+    question.answerParts.forEach((part) => act(() => controller.result.current.actions.answerZhuyin(part)));
+
+    expect(controller.result.current.view.zhuyin.answerParts).toEqual(question.answerParts);
+    expect(controller.result.current.view.zhuyin.answeredCorrectly).toBe(true);
   });
 });

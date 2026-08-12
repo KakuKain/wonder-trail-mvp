@@ -4,7 +4,7 @@ import { stages } from "../data/stages";
 import { clearMarketRoundSession, loadMarketRoundSession, writeMarketRoundSession } from "../lib/marketSession";
 import { getSaveProtectionMode, loadEvents, loadSave } from "../lib/storage";
 import { createPlacedObjects } from "../lib/stagePlacement";
-import type { GameEvent, MarketDifficultyId, PlacedObject, SaveData, StageConfig } from "../types";
+import type { GameEvent, MarketDifficultyId, PlacedObject, SaveData, StageConfig, ZhuyinLevelId } from "../types";
 
 export type Screen = "intro" | "stage" | "reward" | "complete";
 export type MarketPhase = "story" | "pick" | "total" | "complete";
@@ -53,6 +53,8 @@ export function useGameState() {
   const [zhuyinQuestionIndex, setZhuyinQuestionIndex] = useState(0);
   const [zhuyinSelectedAnswer, setZhuyinSelectedAnswer] = useState<string | null>(null);
   const [zhuyinFeedback, setZhuyinFeedback] = useState("");
+  const [zhuyinLevel, setZhuyinLevel] = useState<ZhuyinLevelId | null>(null);
+  const [zhuyinAnswerParts, setZhuyinAnswerParts] = useState<string[]>([]);
 
   useEffect(() => {
     const stage = stages[stageIndex];
@@ -94,5 +96,6 @@ export function useGameState() {
     marketSelectedTotal, setMarketSelectedTotal, marketFeedback, setMarketFeedback,
     zhuyinQuestionIndex, setZhuyinQuestionIndex, zhuyinSelectedAnswer, setZhuyinSelectedAnswer,
     zhuyinFeedback, setZhuyinFeedback,
+    zhuyinLevel, setZhuyinLevel, zhuyinAnswerParts, setZhuyinAnswerParts,
   };
 }

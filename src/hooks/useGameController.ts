@@ -123,6 +123,8 @@ export function useGameController(totalStages: number) {
     game.setZhuyinQuestionIndex(0);
     game.setZhuyinSelectedAnswer(null);
     game.setZhuyinFeedback("");
+    game.setZhuyinLevel(null);
+    game.setZhuyinAnswerParts([]);
     game.setScreen("stage");
     logEvent("stage_start", nextStage.id, { difficulty: nextStage.difficulty });
     speak(nextStage.instructionText, { tone: "neutral", delayMs: 500 });
@@ -205,6 +207,8 @@ export function useGameController(totalStages: number) {
     game.setZhuyinQuestionIndex(0);
     game.setZhuyinSelectedAnswer(null);
     game.setZhuyinFeedback("");
+    game.setZhuyinLevel(null);
+    game.setZhuyinAnswerParts([]);
     forestReplayRoute.current = [];
     forestReplayPosition.current = 0;
     game.setScreen("intro");
@@ -275,6 +279,9 @@ export function useGameController(totalStages: number) {
     answerZhuyin: zhuyinActions.answerZhuyin,
     continueZhuyin: zhuyinActions.continueZhuyin,
     showZhuyinHint: zhuyinActions.showZhuyinHint,
+    selectZhuyinLevel: zhuyinActions.selectZhuyinLevel,
+    returnToZhuyinLevels: zhuyinActions.returnToZhuyinLevels,
+    undoZhuyinPart: zhuyinActions.undoZhuyinPart,
     continueForestAdventure,
     toggleVoice,
     returnHome,

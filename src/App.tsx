@@ -27,9 +27,9 @@ import marketHotspot from "./assets/maps/hotspots/market.webp";
 import planeHotspot from "./assets/maps/hotspots/plane.webp";
 import schoolHotspot from "./assets/maps/hotspots/school.webp";
 import homeSeaMap from "./assets/maps/parts-island-square-ocean-v2.webp";
-import collectionRewardClean from "./assets/reward/collection-reward-clean.webp";
+import collectionRewardClean from "./assets/reward/collection-reward-clean-v2.webp";
 import planePartReward from "./assets/reward/plane-part.webp";
-import xiaohangFox from "./assets/xiaohang-fox.webp";
+import xiaohangFox from "./assets/xiaohang-fox-v2.png";
 
 const chapters = [
   {
@@ -252,10 +252,15 @@ export function App() {
             />
           ) : stage.mechanic === "zhuyin" && view.zhuyin.puzzle ? (
             <ZhuyinStage
+              levels={view.zhuyin.levels}
+              level={view.zhuyin.level}
               puzzle={view.zhuyin.puzzle}
+              question={view.zhuyin.question}
               questionIndex={view.zhuyin.questionIndex}
               totalQuestions={view.zhuyin.totalQuestions}
               selectedAnswer={view.zhuyin.selectedAnswer}
+              answerParts={view.zhuyin.answerParts}
+              answeredCorrectly={view.zhuyin.answeredCorrectly}
               feedback={view.zhuyin.feedback}
               hintVisible={hintVisible}
               renderObjectIcon={(assetId) => <ObjectIcon assetId={assetId} />}
@@ -269,7 +274,10 @@ export function App() {
               onHint={actions.showHint}
               onSpeak={speak}
               onVoiceToggle={actions.toggleVoice}
+              onLevelSelect={actions.selectZhuyinLevel}
+              onLevelBack={actions.returnToZhuyinLevels}
               onAnswer={actions.answerZhuyin}
+              onUndo={actions.undoZhuyinPart}
               onContinue={actions.continueZhuyin}
             />
           ) : (

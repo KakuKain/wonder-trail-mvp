@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import rabbitOwner from "../../assets/market/customers/rabbit-owner-v1.webp";
+import rabbitOwner from "../../assets/market/customers/rabbit-owner-v2.webp";
 import marketStoryBackground from "../../assets/market/market-checkout-background-v2.webp";
-import marketWingPart from "../../assets/reward/market-wing-part-v1.webp";
+import marketWingPart from "../../assets/reward/market-wing-part-v2.webp";
 
 type Props = {
   acquiredPart: boolean;

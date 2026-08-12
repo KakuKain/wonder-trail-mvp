@@ -49,6 +49,16 @@ export type ZhuyinPuzzleConfig = {
   choices: string[];
 };
 
+export type ZhuyinLevelId = "listen" | "initial" | "syllable" | "word";
+
+export type ZhuyinLevelConfig = {
+  id: ZhuyinLevelId;
+  title: string;
+  shortDescription: string;
+  ageLabel: string;
+  icon: string;
+};
+
 export type MarketOrderLine = {
   assetId: string;
   count: number;
