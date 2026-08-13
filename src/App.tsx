@@ -100,7 +100,7 @@ export function App() {
 
   const stage = stages[stageIndex];
   const rewardAssetId = reward?.stickers[0] ?? stage.targets?.[0]?.assetId ?? "pine_cone";
-  const rewardPresentation = forestRewardCopy(assets[rewardAssetId].label, lastCompletionWasNew);
+  const rewardPresentation = forestRewardCopy(stage.targetLabel ?? assets[rewardAssetId].label, lastCompletionWasNew);
   const stageBackground = forestBackgrounds[stageBackgroundIndex % forestBackgrounds.length];
   const foundTargets = objects.filter((object) => object.isTarget && object.found).length;
   const totalTargets = objects.filter((object) => object.isTarget).length;
@@ -119,6 +119,33 @@ export function App() {
   );
   const hasProgress = save.completedStageIds.length > 0
     || save.marketProgress.completedChallengeIds.length > 0;
+  const completedCoreParts = [forestPartAcquired, marketPartAcquired, schoolPartAcquired].filter(Boolean).length;
+  const nextMapPlace = !forestPartAcquired ? "森林" : !marketPartAcquired ? "市場" : "學校";
+  const mapStory = completedCoreParts === 3
+    ? {
+        headline: ["三個零件都找到了！"] as RubySegment[],
+        body: ["教室會在後續版本開放，先挑一個喜歡的任務再玩一次吧。"] as RubySegment[],
+        speech: "三個零件都找到了！教室會在後續版本開放，先挑一個喜歡的任務再玩一次吧。",
+      }
+    : completedCoreParts === 0
+      ? {
+          headline: dialogue.chapterSelectHeadline,
+          body: dialogue.chapterSelectBody,
+          speech: "飛機壞掉了！先去森林找零件。",
+        }
+      : {
+          headline: [`找到 ${completedCoreParts} 個零件了！`] as RubySegment[],
+          body: [`接著去${nextMapPlace}，找下一個零件吧。`] as RubySegment[],
+          speech: `找到 ${completedCoreParts} 個零件了！接著去${nextMapPlace}，找下一個零件吧。`,
+        };
+  const lockedClassroomMessage = completedCoreParts === 3
+    ? "三個任務都完成了！教室將在後續版本開放。"
+    : "教室將在後續版本開放，可以先挑戰森林、市場和學校。";
+  const activeZhuyinLevel = view.zhuyin.levels.find((item) => item.id === view.zhuyin.level);
+  const zhuyinMasteryCopy = view.zhuyin.level === "listen" ? "你會聽字音找出完整注音了！"
+    : view.zhuyin.level === "initial" ? "你會找出一個字的開頭聲音了！"
+      : view.zhuyin.level === "syllable" ? "你會把聲符、韻符和聲調拼起來了！"
+        : "你會依序拼出完整詞語了！";
 
   const stickerAssets = useMemo(
     () => save.stickers.map((stickerId) => assets[stickerId]).filter(Boolean),
@@ -183,9 +210,10 @@ export function App() {
           chapters={chapters} hasProgress={hasProgress} forestPartAcquired={forestPartAcquired}
           marketPartAcquired={marketPartAcquired} schoolPartAcquired={schoolPartAcquired} mapArt={homeSeaMap} planeArt={planeHotspot}
           characterArt={xiaohangFox} replayIcon={<ReplayIcon />} lockIcon={<LockIcon />}
+          lockedMessage={lockedClassroomMessage}
           onMapReady={() => setHomeMapReady(true)} onReset={actions.resetProgress}
-          headline={<HeadingWithAudio segments={dialogue.chapterSelectHeadline} speakText="飛機壞掉了！先去森林找零件。" onSpeak={speak} />}
-          body={<p><RubyText segments={dialogue.chapterSelectBody} /></p>}
+          headline={<HeadingWithAudio segments={mapStory.headline} speakText={mapStory.speech} onSpeak={speak} />}
+          body={<p><RubyText segments={mapStory.body} /></p>}
           onChapterSelect={(chapterId, playable) => {
             if (chapterId === "search") return actions.startForest();
             if (chapterId === "math" && playable) return actions.startMarket();
@@ -226,6 +254,8 @@ export function App() {
               basket={marketBasket}
               phase={marketPhase}
               feedback={marketFeedback}
+              customerNumber={view.market.customerNumber}
+              customerTarget={view.market.customerTarget}
               total={currentMarketQuestionValue}
               answerOptions={currentMarketAnswerOptions}
               selectedTotal={marketSelectedTotal}
@@ -253,6 +283,7 @@ export function App() {
           ) : stage.mechanic === "zhuyin" && view.zhuyin.puzzle ? (
             <ZhuyinStage
               levels={view.zhuyin.levels}
+              completedLevels={view.zhuyin.completedLevels}
               level={view.zhuyin.level}
               puzzle={view.zhuyin.puzzle}
               question={view.zhuyin.question}
@@ -263,13 +294,12 @@ export function App() {
               answeredCorrectly={view.zhuyin.answeredCorrectly}
               feedback={view.zhuyin.feedback}
               hintVisible={hintVisible}
-              renderObjectIcon={(assetId) => <ObjectIcon assetId={assetId} />}
-              renderRubyText={(segments) => <RubyText segments={segments} />}
               homeIcon={<HomeIcon />}
               hintIcon={<LightbulbIcon />}
               speakerIcon={<SpeakerIcon />}
               voiceSupported={view.voice.supported}
               voiceMuted={view.voice.muted}
+              fontReady={view.zhuyin.fontReady}
               onHome={actions.returnHome}
               onHint={actions.showHint}
               onSpeak={speak}
@@ -286,8 +316,8 @@ export function App() {
               ready={stageBackgroundReady}
               background={stageBackground}
               onBackgroundReady={() => setStageBackgroundReady(true)}
-              toolbar={<div className="stage-toolbar" aria-label="關卡工具列"><button className="home-fab" type="button" aria-label="回桌面" onClick={actions.returnHome}><HomeIcon /></button>{stage.mechanic === "search" && stage.targets && stage.targetLabel && stage.targetRuby && <div className="stage-hud"><div className="target-pill"><ObjectIcon assetId={stage.targets[0].assetId} compact /><span className="target-action">找找</span><strong><RubyText segments={[{ text: stage.targetLabel, ruby: stage.targetRuby }]} /></strong><small className="count-badge">{foundTargets}/{totalTargets}</small></div></div>}<button className="hint-fab" type="button" aria-label="小航提示" aria-pressed={hintVisible} onClick={actions.showHint}><LightbulbIcon /></button></div>}
-              objects={<>{objects.map((object) => <SearchObject key={object.instanceId} object={object} hitboxScale={stage.assist.hitboxScale} hinted={hintVisible && object.isTarget && !object.found} onSelect={() => actions.selectForestObject(object)} />)}</>}
+              toolbar={<div className="stage-toolbar" aria-label="關卡工具列"><button className="home-fab" type="button" aria-label="回桌面" onClick={actions.returnHome}><HomeIcon /></button>{stage.mechanic === "search" && stage.targets && stage.targetLabel && stage.targetRuby && <div className="stage-hud"><div className="target-pill"><ObjectIcon assetId={stage.targets[0].assetId} compact /><span className="target-action" aria-label={`第 ${view.forest.currentStep} 關，共 ${view.forest.totalSteps} 關`}>{view.forest.currentStep}/{view.forest.totalSteps}</span><strong><RubyText segments={[{ text: stage.targetLabel, ruby: stage.targetRuby }]} /></strong><small className="count-badge">{foundTargets}/{totalTargets}</small></div></div>}<button className="hint-fab" type="button" aria-label="小航提示" aria-pressed={hintVisible} onClick={actions.showHint}><LightbulbIcon /></button></div>}
+              objects={<>{objects.map((object) => <SearchObject key={object.instanceId} object={object} hitboxScale={stage.assist.hitboxScale} hinted={hintVisible && object.isTarget && !object.found} wrong={game.forestWrongObjectId === object.instanceId} onSelect={() => actions.selectForestObject(object)} />)}</>}
             />
           )}
         </section>
@@ -315,7 +345,7 @@ export function App() {
           caption={<div className="collection-reward-caption">
             <p className="eyebrow">{rewardPresentation.eyebrow}</p>
             <HeadingWithAudio
-              segments={lastCompletionWasNew ? dialogue.rewardHeadline : [rewardPresentation.headline]}
+              segments={[rewardPresentation.headline]}
               speakText={rewardPresentation.headline}
               onSpeak={speak}
             />
@@ -326,10 +356,10 @@ export function App() {
               <button
                 className="collection-action-button collection-next-button"
                 type="button"
-                aria-label={stages[stageIndex + 1]?.world === "forest" ? "前往下一關" : "完成森林"}
+                aria-label={view.forest.hasNext ? "前往下一關" : "完成森林"}
                 onClick={actions.continueForestAdventure}
               >
-                <span>{stages[stageIndex + 1]?.world === "forest" ? "前往下一關" : "完成森林"}</span>
+                <span>{view.forest.hasNext ? "前往下一關" : "完成森林"}</span>
                 <ArrowRightIcon />
               </button>
             </div>
@@ -377,11 +407,11 @@ export function App() {
           caption={<div className="complete-caption">
             <div>
               <HeadingWithAudio
-                segments={stage.world === "forest" && !lastCompletionWasNew ? ["恭喜再次通關！"] : stage.world === "school" ? (lastCompletionWasNew ? ["注音小達人！"] : ["再次完成學校任務！"]) : dialogue.completeHeadline}
-                speakText={stage.world === "forest" && !lastCompletionWasNew ? "恭喜再次通關！" : stage.world === "school" ? (lastCompletionWasNew ? "注音小達人！" : "再次完成學校任務！") : "今天的森林書完成囉！"}
+                segments={stage.world === "forest" && !lastCompletionWasNew ? ["恭喜再次通關！"] : stage.world === "school" ? [`${activeZhuyinLevel?.title ?? "聲音任務"}完成！`] : dialogue.completeHeadline}
+                speakText={stage.world === "forest" && !lastCompletionWasNew ? "恭喜再次通關！" : stage.world === "school" ? `${activeZhuyinLevel?.title ?? "聲音任務"}完成！${zhuyinMasteryCopy}` : "今天的森林書完成囉！"}
                 onSpeak={speak}
               />
-              <p><RubyText segments={stage.world === "forest" && !lastCompletionWasNew ? ["小航很開心，再一起找找看吧！"] : stage.world === "school" ? [lastCompletionWasNew ? "你幫老師找到了正確的聲音！" : "你又把聲音找對了！"] : dialogue.completeSummary()} /></p>
+              <p><RubyText segments={stage.world === "forest" && !lastCompletionWasNew ? ["小航很開心，再一起找找看吧！"] : stage.world === "school" ? [zhuyinMasteryCopy] : dialogue.completeSummary()} /></p>
             </div>
           </div>}
           modal={collectionOpen && (
@@ -667,7 +697,14 @@ function RubyText({ segments }: { segments: RubySegment[] }) {
         typeof segment === "string" ? (
           <span className="plain-text" key={`${segment}-${index}`}>{segment}</span>
         ) : (
-          <span className="plain-text" key={`${segment.text}-${index}`}>{segment.text}</span>
+          <span className="bpmf-annotated-text" key={`${segment.text}-${index}`} aria-label={`${segment.text}，${segment.ruby}`}>
+            {Array.from(segment.text).map((character, characterIndex) => (
+              <span className="bpmf-ruby-character" key={`${character}-${characterIndex}`} aria-hidden="true">
+                <span className="bpmf-base-character">{character}</span>
+                <span className="bpmf-zihi-only bpmf-annotation-glyph">{character}</span>
+              </span>
+            ))}
+          </span>
         )
       )}
     </span>
@@ -678,11 +715,13 @@ function SearchObject({
   object,
   hitboxScale,
   hinted,
+  wrong,
   onSelect,
 }: {
   object: PlacedObject;
   hitboxScale: number;
   hinted: boolean;
+  wrong: boolean;
   onSelect: () => void;
 }) {
   const asset = assets[object.assetId];
@@ -700,7 +739,7 @@ function SearchObject({
 
   return (
     <button
-      className={`search-object ${asset.kind} ${object.found ? "found" : ""} ${hinted ? "hinted" : ""}`}
+      className={`search-object ${asset.kind} ${object.found ? "found" : ""} ${hinted ? "hinted" : ""} ${wrong ? "wrong" : ""}`}
       data-target={object.isTarget ? "true" : "false"}
       style={style}
       onClick={onSelect}

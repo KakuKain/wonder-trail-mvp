@@ -3,7 +3,7 @@ import type { GameEvent, SaveData } from "../types";
 const saveKey = "wonder-trail:save";
 const eventKey = "wonder-trail:events";
 const futureSaveBackupKey = "wonder-trail:save:future-backup";
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 let saveWriteLocked = false;
 
 export type SaveProtectionMode = "normal" | "future-version";
@@ -15,6 +15,7 @@ export function getSaveProtectionMode(): SaveProtectionMode {
 export const defaultSave: SaveData = {
   version: SAVE_VERSION,
   completedStageIds: [],
+  completedZhuyinLevels: [],
   stars: 0,
   stickers: [],
   marketProgress: {
@@ -29,6 +30,7 @@ function createDefaultSave(): SaveData {
   return {
     ...defaultSave,
     completedStageIds: [],
+    completedZhuyinLevels: [],
     stickers: [],
     marketProgress: { ...defaultSave.marketProgress, nextChallengeByDifficulty: {} },
   };
@@ -47,13 +49,16 @@ export function migrateSave(value: unknown): SaveData {
 
   // Version 0 was the original, unversioned localStorage payload.
   const sourceVersion = typeof record.version === "number" ? record.version : 0;
-  const migrated = sourceVersion < 1 ? { ...record, version: SAVE_VERSION } : record;
+  const migrated = sourceVersion < SAVE_VERSION ? { ...record, version: SAVE_VERSION } : record;
   const marketProgress = asRecord(migrated.marketProgress);
   const nextChallengeByDifficulty = asRecord(marketProgress?.nextChallengeByDifficulty);
 
   return {
     version: typeof migrated.version === "number" ? migrated.version : SAVE_VERSION,
     completedStageIds: Array.isArray(migrated.completedStageIds) ? migrated.completedStageIds.filter((id): id is string => typeof id === "string") : [],
+    completedZhuyinLevels: Array.isArray(migrated.completedZhuyinLevels)
+      ? migrated.completedZhuyinLevels.filter((id): id is SaveData["completedZhuyinLevels"][number] => ["listen", "initial", "syllable", "word"].includes(String(id)))
+      : [],
     stars: typeof migrated.stars === "number" && Number.isFinite(migrated.stars) ? migrated.stars : 0,
     stickers: Array.isArray(migrated.stickers) ? migrated.stickers.filter((id): id is string => typeof id === "string") : [],
     marketProgress: {

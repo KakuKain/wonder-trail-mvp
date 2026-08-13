@@ -15,6 +15,11 @@ describe("loadSave", () => {
   it("migrates the original unversioned payload to the current version", () => {
     const migrated = migrateSave({ stars: 4, completedStageIds: ["forest_search_01"], stickers: ["apple"], marketProgress: { activeDifficulty: "advanced", completedChallengeIds: ["market_order_01"], completedDifficulties: ["intermediate"], nextChallengeByDifficulty: { advanced: 2 } } });
     expect(migrated).toMatchObject({ version: SAVE_VERSION, stars: 4, completedStageIds: ["forest_search_01"], marketProgress: { activeDifficulty: "advanced", nextChallengeByDifficulty: { advanced: 2 } } });
+    expect(migrated.completedZhuyinLevels).toEqual([]);
+  });
+  it("preserves valid completed zhuyin levels and removes unknown values", () => {
+    const migrated = migrateSave({ version: 1, completedZhuyinLevels: ["listen", "word", "unknown"] });
+    expect(migrated.completedZhuyinLevels).toEqual(["listen", "word"]);
   });
   it("stamps the current version whenever a save is written", () => {
     writeSave({ ...defaultSave, version: 0, stars: 2 });

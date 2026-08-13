@@ -1,5 +1,5 @@
 :root {
-  --child-font: "BpmfGenSenRounded", "PingFang TC", "Noto Sans TC", sans-serif;
+  --child-font: ui-rounded, "PingFang TC", "Noto Sans TC", "Arial Rounded MT Bold", system-ui, sans-serif;
   --ui-number-font: ui-rounded, "SF Pro Rounded", "Nunito", "Arial Rounded MT Bold", system-ui, sans-serif;
   --child-font-regular: 400;
   --child-font-bold: 900;
@@ -15,6 +15,13 @@
   src: url("./assets/BpmfGenSenRounded-R-subset.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
+}
+
+@font-face {
+  font-family: "Bpmf Zihi Only R";
+  src: url("./assets/BpmfZihiOnly-R.ttf") format("truetype");
+  font-weight: 400;
+  font-display: block;
 }
 
 @font-face {
@@ -189,6 +196,32 @@ p {
   display: inline;
 }
 
+.bpmf-annotated-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.04em;
+  white-space: nowrap;
+}
+
+.bpmf-ruby-character {
+  display: inline-grid;
+  grid-template-columns: auto minmax(0.48em, auto);
+  align-items: center;
+  column-gap: 0.05em;
+  line-height: 1.05;
+}
+
+.bpmf-base-character {
+  grid-column: 1;
+}
+
+.bpmf-annotation-glyph {
+  grid-column: 2;
+  min-width: 0.48em;
+  font-size: 0.84em;
+  line-height: 1;
+}
+
 .target-pill {
   display: inline-flex;
   align-items: center;
@@ -344,6 +377,41 @@ p {
   height: 25svh;
   min-height: 190px;
   pointer-events: auto;
+}
+
+.locked-chapter-message {
+  position: absolute;
+  right: 18px;
+  bottom: calc(max(190px, 25svh) + 12px);
+  left: 18px;
+  z-index: 18;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 10px;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 10px 14px;
+  border: 3px solid #6b4634;
+  border-radius: 18px;
+  color: #4b3428;
+  background: rgba(255, 244, 199, 0.96);
+  box-shadow: 0 7px 0 rgba(75, 48, 31, 0.2), 0 14px 24px rgba(39, 35, 25, 0.22);
+}
+
+.locked-chapter-message > span {
+  grid-row: 1 / 3;
+  font-size: 1.7rem;
+}
+
+.locked-chapter-message strong {
+  font-size: 1rem;
+}
+
+.locked-chapter-message small {
+  color: #6f644c;
+  font-size: 0.78rem;
+  line-height: 1.25;
 }
 
 .map-replay-button {
@@ -992,8 +1060,10 @@ p {
 
 .target-action {
   color: #7a522d;
-  font-size: 0.875rem;
+  font-family: var(--ui-number-font);
+  font-size: 0.7rem;
   font-weight: var(--child-font-bold);
+  white-space: nowrap;
 }
 
 .target-pill small:not(.count-badge) {
@@ -1262,21 +1332,17 @@ p {
 
 .market-comic-panel img {
   position: absolute;
+  inset: 0;
   z-index: 1;
-  right: -28%;
-  bottom: -29%;
-  width: 128%;
-  height: 126%;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 3px rgba(87, 50, 24, 0.2));
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 38%;
+  filter: none;
 }
 
 .market-comic-panel-request img {
-  right: auto;
-  bottom: -26%;
-  left: -27%;
-  width: 126%;
-  height: 128%;
+  object-position: center 34%;
 }
 
 .market-comic-panel-handoff img {
@@ -1421,13 +1487,15 @@ p {
 }
 
 .market-complete-owner {
-  align-self: end;
-  width: min(250px, 73vw);
-  max-height: 40svh;
-  margin: 0 auto -18px;
-  object-fit: contain;
-  object-position: center bottom;
-  filter: drop-shadow(0 8px 6px rgba(78, 45, 22, 0.22));
+  align-self: stretch;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  object-fit: cover;
+  object-position: center 24%;
+  border-bottom: 4px solid rgba(120, 72, 34, .28);
+  filter: none;
 }
 
 .market-complete-copy {
@@ -1480,6 +1548,35 @@ p {
   background: radial-gradient(circle, rgba(255, 238, 113, 0.95), rgba(255, 214, 70, 0.34) 55%, transparent 72%);
   animation: rewardGlowPulse 1.8s ease-in-out infinite;
 }
+
+.market-complete-badge {
+  display: grid;
+  grid-template-columns: 48px auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 76px;
+  margin: 10px auto;
+  padding: 10px 18px;
+  border: 4px solid #72935d;
+  border-radius: 24px;
+  color: #43623e;
+  background: #e5f3bd;
+  box-shadow: 0 5px 0 rgba(71, 102, 55, 0.2);
+}
+
+.market-complete-badge span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #70a25d;
+  font-size: 1.65rem;
+  font-weight: 900;
+}
+
+.market-complete-badge strong { font-size: 1.2rem; }
 
 .market-complete-actions {
   display: grid;
@@ -1623,6 +1720,11 @@ p {
 }
 
 .market-checkout-customer {
+  --customer-scale: 1;
+  --customer-x: 0px;
+  --customer-y: 0px;
+  --customer-scale-correct: 1.06;
+  --customer-y-correct: -5px;
   position: absolute;
   top: -43px;
   right: 3px;
@@ -1634,13 +1736,27 @@ p {
   object-position: center bottom;
   filter: drop-shadow(0 7px 5px rgba(72, 42, 22, 0.22));
   pointer-events: none;
+  transform-origin: center bottom;
+  transform: translate(var(--customer-x), var(--customer-y)) scale(var(--customer-scale));
   transition: transform 220ms ease-out;
 }
 
 .market-checkout-customer-correct {
-  transform: translateY(-5px) scale(1.06);
+  transform: translate(var(--customer-x), var(--customer-y-correct)) scale(var(--customer-scale-correct));
   animation: market-character-wave-in 320ms ease-out both;
 }
+
+/* Normalize the visible character mass, not just the transparent image box. */
+.market-checkout-customer.market-customer-rabbit { --customer-scale: 1.22; --customer-scale-correct: 1.29; }
+.market-checkout-customer.market-customer-deer { --customer-scale: 1; }
+.market-checkout-customer.market-customer-squirrel { --customer-scale: 0.95; --customer-scale-correct: 1; }
+.market-checkout-customer.market-customer-bear { --customer-scale: 0.99; --customer-scale-correct: 1.05; }
+.market-checkout-customer.market-customer-lamb { --customer-scale: 1.1; --customer-scale-correct: 1.17; }
+.market-checkout-customer.market-customer-cat { --customer-scale: 0.96; --customer-scale-correct: 1.02; }
+.market-checkout-customer.market-customer-beaver { --customer-scale: 0.93; --customer-scale-correct: 0.99; }
+.market-checkout-customer.market-customer-dog { --customer-scale: 1.01; --customer-scale-correct: 1.07; }
+.market-checkout-customer.market-customer-fox { --customer-scale: 0.98; --customer-scale-correct: 1.04; }
+.market-checkout-customer.market-customer-owl { --customer-scale: 1.08; --customer-scale-correct: 1.14; }
 
 .market-stage-correct .market-level-board-checkout {
   transform: translate(-50%, -146px) scale(0.9);
@@ -1784,6 +1900,21 @@ p {
   width: 16px;
   height: 16px;
   transform: translateY(-50%);
+}
+
+.market-difficulty-check {
+  position: absolute;
+  top: -7px;
+  right: -4px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid white;
+  border-radius: 50%;
+  color: white;
+  background: #6c9c58;
+  font-size: .76rem;
 }
 
 .market-active-level {
@@ -3121,13 +3252,27 @@ p {
   box-shadow: none;
   transform: translate(-50%, -50%);
   pointer-events: auto;
+  touch-action: manipulation;
   filter: drop-shadow(0 5px 4px rgba(54, 35, 20, 0.26));
 }
 
 .market-item-art::before {
   position: absolute;
-  inset: 0 -3px;
+  /* Keep the art compact while giving a preschool-sized finger a forgiving target. */
+  z-index: 0;
+  inset: -10px -12px;
   content: "";
+}
+
+.market-item-art > * {
+  position: relative;
+  z-index: 1;
+}
+
+.market-item-counting .market-item-label-copy {
+  display: grid;
+  place-items: center;
+  min-height: 32px;
 }
 
 .market-item-art:focus,
@@ -3306,15 +3451,22 @@ p {
   border-radius: 50%;
   background: linear-gradient(180deg, #fff4c7, #f3cf79);
   box-shadow: 0 4px 0 rgba(99, 63, 31, 0.2);
+  pointer-events: none;
 }
 
 .market-customer-avatar img {
-  width: 118%;
-  height: 136%;
+  width: 110%;
+  height: 122%;
   object-fit: contain;
-  object-position: center 20%;
-  transform: translateY(11%);
+  object-position: center 24%;
+  transform: translateY(5%);
 }
+
+/* Keep ears, antlers and tall head shapes inside the circular portrait. */
+.market-customer-avatar.market-customer-rabbit img { object-position: center 29%; }
+.market-customer-avatar.market-customer-deer img { object-position: center 27%; }
+.market-customer-avatar.market-customer-fox img { object-position: center 28%; }
+.market-customer-avatar.market-customer-owl img { object-position: center 26%; }
 
 .market-customer-dialogue-art::before {
   display: none;
@@ -3347,6 +3499,50 @@ p {
 .market-customer-dialogue-art h2 {
   font-size: clamp(1.14rem, 4.35vw, 1.44rem);
   line-height: 1.14;
+}
+
+.market-order-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.market-order-lead {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.market-order-items {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-width: 0;
+}
+
+.market-order-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  border-radius: 9px;
+  background: rgba(255, 246, 207, 0.76);
+  box-shadow: inset 0 0 0 1px rgba(107, 70, 52, 0.16);
+  font-size: 0.88em;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.market-order-chip > b {
+  color: #875424;
+  font-family: var(--ui-number-font);
+  font-size: 1.08em;
+}
+
+.market-order-chip > small {
+  color: #6b4634;
+  font-size: 0.72em;
 }
 
 .market-customer-dialogue-art .market-feedback {
@@ -3437,6 +3633,17 @@ p {
   animation: hintPulse 900ms ease-in-out infinite;
 }
 
+.search-object.wrong .object-icon {
+  animation: forest-wrong-nudge 420ms ease-out;
+}
+
+@keyframes forest-wrong-nudge {
+  0%, 100% { transform: translateX(0) scale(1); }
+  25% { transform: translateX(-7px) rotate(-4deg) scale(.96); }
+  55% { transform: translateX(6px) rotate(3deg) scale(.96); }
+  78% { transform: translateX(-3px) rotate(-1deg); }
+}
+
 .search-object.leaf,
 .search-object.acorn,
 .search-object.pinecone,
@@ -3451,6 +3658,15 @@ p {
     sepia(0.22)
     saturate(0.72)
     drop-shadow(0 1px 1px rgba(32, 48, 25, 0.1));
+}
+
+.search-object.footprint[data-target="true"] .object-icon {
+  opacity: 0.84;
+  filter:
+    sepia(0.12)
+    saturate(0.86)
+    contrast(1.08)
+    drop-shadow(0 2px 2px rgba(24, 39, 23, 0.28));
 }
 
 .search-object.butterfly,
@@ -4741,7 +4957,9 @@ p {
   }
 
   .stage-hud .target-action {
-    display: none;
+    display: inline-block;
+    flex: 0 0 auto;
+    font-size: 0.64rem;
   }
 
   .progress-wrap {
@@ -5172,12 +5390,14 @@ p {
 .zhuyin-level-card.level-2 { border-color: #659aa8; background: #eefbfa; }
 .zhuyin-level-card.level-3 { border-color: #c79049; background: #fff7d6; }
 .zhuyin-level-card.level-4 { border-color: #8d76ad; background: #f8f0ff; }
+.zhuyin-level-card.completed { box-shadow: 0 7px 0 rgba(80, 105, 66, 0.2), 0 0 0 6px rgba(117, 165, 92, 0.18); }
 .zhuyin-level-card:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(80, 105, 66, 0.2); }
 .zhuyin-level-number { position: absolute; top: 10px; left: 12px; color: #59725c; font-size: .82rem; font-weight: 900; }
 .zhuyin-level-icon { font-size: 2.7rem; line-height: 1; }
 .zhuyin-level-card strong { font-size: clamp(1.2rem, 4vw, 1.55rem); }
 .zhuyin-level-card > span:not(.zhuyin-level-number):not(.zhuyin-level-icon) { color: #657261; font-weight: 800; }
 .zhuyin-level-card small { margin-top: auto; padding: 4px 12px; border-radius: 99px; color: #526756; background: rgba(255,255,255,.7); font-weight: 900; }
+.zhuyin-level-complete { position: absolute; top: 9px; right: 10px; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; color: white !important; background: #6f9e5d; font-size: 1.1rem; }
 .zhuyin-level-back { margin-bottom: 4px; border: 0; color: #547b64; background: transparent; font: inherit; font-weight: 900; cursor: pointer; }
 
 .zhuyin-header .eyebrow {
@@ -5242,6 +5462,64 @@ p {
   box-shadow: inset 0 -6px 0 rgba(121, 169, 107, 0.18);
 }
 
+.zhuyin-listen-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 150px;
+  margin-bottom: 18px;
+  padding: 22px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255,255,255,.8), transparent 48%),
+    linear-gradient(145deg, #e4f0cb, #f9e4aa);
+  box-shadow: inset 0 -6px 0 rgba(121, 169, 107, 0.18);
+}
+
+.zhuyin-listen-panel p {
+  margin: 0;
+  color: #58765e;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.zhuyin-listen-panel .zhuyin-audio-button {
+  position: static;
+  min-width: 190px;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+.zhuyin-listen-panel.audio-only {
+  min-height: 116px;
+  padding: 18px;
+}
+
+.zhuyin-listen-panel.audio-only .zhuyin-audio-button {
+  width: min(250px, 100%);
+  min-height: 68px;
+  font-size: 1.3rem;
+}
+
+.zhuyin-listen-panel.audio-only .zhuyin-audio-button svg {
+  width: 30px;
+  height: 30px;
+}
+
+.zhuyin-voice-fallback {
+  width: min(390px, 100%);
+  margin: 0;
+  padding: 9px 12px;
+  border: 2px dashed #9c7a4b;
+  border-radius: 14px;
+  color: #6f5138 !important;
+  background: rgba(255, 250, 224, .9);
+  font-size: .92rem !important;
+  line-height: 1.4;
+}
+
 .zhuyin-picture {
   display: grid;
   place-items: center;
@@ -5297,7 +5575,75 @@ p {
   line-height: 1.22;
 }
 
-.zhuyin-reveal { margin-top: 4px; color: #52725d; font-size: 1.1rem; font-weight: 900; }
+.zhuyin-reveal {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 18px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  color: #315e40;
+  background: #e8f5cf;
+  font-weight: 900;
+}
+
+.vertical-zhuyin-word {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  font-family: ui-rounded, "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+}
+
+.vertical-zhuyin-character {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 5px;
+}
+
+.vertical-zhuyin-character b {
+  grid-column: 1;
+  font-size: clamp(2rem, 7vw, 2.8rem);
+  line-height: 1;
+}
+
+.vertical-zhuyin-character small {
+  grid-column: 2;
+  min-width: 1em;
+  min-height: 1em;
+  font-size: clamp(2rem, 7vw, 2.8rem);
+  line-height: 1;
+}
+
+.plain-zhuyin-fallback {
+  max-width: 1.3em;
+  color: #315e40;
+  font-family: var(--ui-number-font);
+  font-size: 1.2rem !important;
+  line-height: 1.05 !important;
+  writing-mode: vertical-rl;
+}
+
+.bpmf-zihi-only {
+  display: inline-block;
+  min-width: 1.2em;
+  font-family: "Bpmf Zihi Only R", sans-serif;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.zhuyin-choice-grid .bpmf-zihi-only {
+  font-size: clamp(3.2rem, 12vw, 5rem);
+}
+
+.plain-zhuyin-choice {
+  display: inline-block;
+  font-family: var(--ui-number-font);
+  letter-spacing: .04em;
+}
+
+.vertical-zhuyin-character .bpmf-zihi-only {
+  font-size: clamp(2rem, 7vw, 2.8rem);
+}
 
 .zhuyin-build-zone {
   display: flex;

@@ -25,6 +25,7 @@ type Props = {
   body: ReactNode;
   replayIcon: ReactNode;
   lockIcon: ReactNode;
+  lockedMessage: string;
   onMapReady: () => void;
   onReset: () => void;
   onChapterSelect: (chapterId: string, playable: boolean) => void;
@@ -32,9 +33,11 @@ type Props = {
 
 export function MapScreen({
   chapters, hasProgress, forestPartAcquired, marketPartAcquired, schoolPartAcquired = false, mapArt, planeArt, characterArt,
-  headline, body, replayIcon, lockIcon, onMapReady, onReset, onChapterSelect,
+  headline, body, replayIcon, lockIcon, lockedMessage, onMapReady, onReset, onChapterSelect,
 }: Props) {
   const [resetConfirmationOpen, setResetConfirmationOpen] = useState(false);
+  const [lockedChapterId, setLockedChapterId] = useState<string | null>(null);
+  const lockedChapter = chapters.find((chapter) => chapter.id === lockedChapterId);
 
   return (
     <section className="chapter-select-screen">
@@ -47,7 +50,10 @@ export function MapScreen({
               <img className="map-plane-hotspot" src={planeArt} alt="" aria-hidden="true" />
               {chapters.map((chapter) => {
                 const partAcquired = chapter.id === "search" ? forestPartAcquired : chapter.id === "math" ? marketPartAcquired : chapter.id === "zhuyin" && schoolPartAcquired;
-                return <button className={`map-node ${chapter.className} ${chapter.playable ? "map-node-playable" : "map-node-locked"} ${partAcquired ? "map-node-completed" : ""}`} key={chapter.id} type="button" style={{ "--map-x": `${chapter.position.x}%`, "--map-y": `${chapter.position.y}%`, "--map-width": `${chapter.position.width}%` } as CSSProperties} aria-label={`${chapter.place}，零件 ${chapter.part}${partAcquired ? "，已取得" : ""}，${chapter.mechanic}。${chapter.story}`} onClick={() => onChapterSelect(chapter.id, chapter.playable)}>
+                return <button className={`map-node ${chapter.className} ${chapter.playable ? "map-node-playable" : "map-node-locked"} ${partAcquired ? "map-node-completed" : ""}`} key={chapter.id} type="button" style={{ "--map-x": `${chapter.position.x}%`, "--map-y": `${chapter.position.y}%`, "--map-width": `${chapter.position.width}%` } as CSSProperties} aria-label={`${chapter.place}，零件 ${chapter.part}${partAcquired ? "，已取得" : ""}，${chapter.mechanic}。${chapter.story}${chapter.playable ? "" : "，尚未開放"}`} aria-describedby={!chapter.playable && lockedChapterId === chapter.id ? "locked-chapter-message" : undefined} onClick={() => {
+                  setLockedChapterId(chapter.playable ? null : chapter.id);
+                  onChapterSelect(chapter.id, chapter.playable);
+                }}>
                   <img className="map-hotspot-image" src={chapter.image} alt="" aria-hidden="true" />
                   <span className="part-badge">{chapter.part}</span>
                   {partAcquired && <span className="lock-badge part-status-badge" aria-hidden="true"><span>✓</span></span>}
@@ -57,6 +63,11 @@ export function MapScreen({
               })}
             </div>
           </div>
+          {lockedChapter && <div className="locked-chapter-message" id="locked-chapter-message" role="status" aria-live="polite">
+            <span aria-hidden="true">🔒</span>
+            <strong>{lockedChapter.place}尚未開放</strong>
+            <small>{lockedMessage}</small>
+          </div>}
           <div className="map-story-card">
             <div className="map-guide-character" aria-hidden="true"><img src={characterArt} alt="" /></div>
             <div className="map-story-copy">{headline}{body}</div>
@@ -67,7 +78,7 @@ export function MapScreen({
               <p id="reset-confirmation-copy">目前找到的零件、星星和市場進度都會清除。</p>
               <div className="reset-confirmation-actions">
                 <button type="button" onClick={() => setResetConfirmationOpen(false)}>繼續遊玩</button>
-                <button className="reset-confirmation-danger" type="button" onClick={() => { setResetConfirmationOpen(false); onReset(); }}>清除進度</button>
+                <button className="reset-confirmation-danger" type="button" onClick={() => { setResetConfirmationOpen(false); setLockedChapterId(null); onReset(); }}>清除進度</button>
               </div>
             </section>
           </div>}

@@ -54,6 +54,14 @@ describe("market rules", () => {
     }
   });
 
+  it("uses Chinese list punctuation and only one final conjunction", () => {
+    const threeItemOrder = Array.from({ length: 100 }, (_, seed) => randomizeMarketChallenge({ ...challenge, difficulty: "advanced" }, seed))
+      .find((item) => item.order.length === 3);
+    expect(threeItemOrder).toBeTruthy();
+    expect(threeItemOrder?.requestText).toMatch(/、.+和 /);
+    expect(threeItemOrder?.requestText.match(/和 /g)).toHaveLength(1);
+  });
+
   it("avoids recently used order signatures while preserving the age rules", () => {
     const recent: string[] = [];
     for (let round = 0; round < 8; round += 1) {

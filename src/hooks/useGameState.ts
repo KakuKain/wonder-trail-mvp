@@ -27,6 +27,7 @@ export function useGameState() {
   const [stageIndex, setStageIndex] = useState(() => hasRestoredMarketRound ? restoredMarketStageIndex : nextStageIndex(save));
   const [objects, setObjects] = useState<PlacedObject[]>(() => createPlacedObjects(stages[hasRestoredMarketRound ? restoredMarketStageIndex : nextStageIndex(save)]));
   const [wrongClicks, setWrongClicks] = useState(0);
+  const [forestWrongObjectId, setForestWrongObjectId] = useState<string | null>(null);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [hintVisible, setHintVisible] = useState(false);
   const [reward, setReward] = useState<StageConfig["reward"] | null>(null);
@@ -82,7 +83,8 @@ export function useGameState() {
 
   return {
     save, setSave, saveProtectionMode, setSaveProtectionMode, screen, setScreen, stageIndex, setStageIndex, objects, setObjects,
-    wrongClicks, setWrongClicks, hintsUsed, setHintsUsed, hintVisible, setHintVisible,
+    wrongClicks, setWrongClicks, forestWrongObjectId, setForestWrongObjectId,
+    hintsUsed, setHintsUsed, hintVisible, setHintVisible,
     reward, setReward, lastCompletionWasNew, setLastCompletionWasNew, eventsOpen, setEventsOpen, events, setEvents, voices, setVoices,
     collectionOpen, setCollectionOpen, collectionPage, setCollectionPage,
     homeMapReady, setHomeMapReady, stageBackgroundReady, setStageBackgroundReady,

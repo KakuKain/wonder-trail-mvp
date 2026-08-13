@@ -16,7 +16,7 @@ describe("controller flow rules", () => {
     expect(forestRewardCopy("紅蝴蝶", true)).toMatchObject({
       collectionAria: "收進圖鑑：紅蝴蝶",
       eyebrow: "收進圖鑑",
-      headline: "成功取得寶物！",
+      headline: "紅蝴蝶收進圖鑑了！",
     });
     expect(forestRewardCopy("紅蝴蝶", false)).toEqual({
       collectionAria: "已在圖鑑裡：紅蝴蝶",
@@ -64,7 +64,7 @@ describe("controller flow rules", () => {
     expect(getStageInitialState(stages[5], progress)).toMatchObject({
       stageBackgroundReady: true,
       marketDifficulty: "advanced",
-      marketChallengeIndex: 4,
+      marketChallengeIndex: 2,
     });
   });
 

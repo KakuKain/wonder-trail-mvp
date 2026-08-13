@@ -1,11 +1,11 @@
-import bear from "../assets/market/customers/bear-v3.webp";
+import bear from "../assets/market/customers/bear-v4.webp";
 import cat from "../assets/market/customers/cat-v3.webp";
-import deer from "../assets/market/customers/deer-v3.webp";
+import deer from "../assets/market/customers/deer-v5.webp";
 import dog from "../assets/market/customers/dog-v3.webp";
 import fox from "../assets/market/customers/fox-v3.webp";
 import lamb from "../assets/market/customers/lamb-v3.webp";
 import owl from "../assets/market/customers/owl-v3.webp";
-import rabbit from "../assets/market/customers/rabbit-v3.webp";
+import rabbit from "../assets/market/customers/rabbit-v4.webp";
 import squirrel from "../assets/market/customers/squirrel-v3.webp";
 import beaver from "../assets/market/customers/beaver-v3.webp";
 import type { MarketCustomerConfig, MarketDifficultyId } from "../types";

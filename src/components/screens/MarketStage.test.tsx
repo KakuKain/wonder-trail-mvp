@@ -31,6 +31,8 @@ describe("MarketStage feedback", () => {
       basket={Object.fromEntries(challenge.order.map((item) => [item.assetId, item.count]))}
       phase="total"
       feedback="再用手指一個一個數一次。"
+      customerNumber={1}
+      customerTarget={5}
       total={total}
       answerOptions={options}
       selectedTotal={wrongAnswer}
@@ -82,6 +84,8 @@ describe("MarketStage feedback", () => {
       basket={{}}
       phase="pick"
       feedback=""
+      customerNumber={1}
+      customerTarget={5}
       total={total}
       answerOptions={marketAnswerOptions(total, challenge.id)}
       selectedTotal={null}
@@ -110,6 +114,9 @@ describe("MarketStage feedback", () => {
     const customerSpeechButton = screen.getByRole("button", { name: "聲音已關閉" });
     expect(customerSpeechButton.hasAttribute("disabled")).toBe(true);
     expect(screen.getByRole("button", { name: "開啟聲音" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "蘋果" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "蘋果，2 貝" })).toBeNull();
+    expect(screen.getByText("第 1/5 位")).toBeTruthy();
   });
 
   it("shows a manual next-level button after the correct answer", () => {
@@ -132,6 +139,8 @@ describe("MarketStage feedback", () => {
       basket={Object.fromEntries(challenge.order.map((item) => [item.assetId, item.count]))}
       phase="total"
       feedback={`謝謝小航！一共有 ${total} 個，你數對了！`}
+      customerNumber={1}
+      customerTarget={5}
       total={total}
       answerOptions={marketAnswerOptions(total, challenge.id)}
       selectedTotal={total}

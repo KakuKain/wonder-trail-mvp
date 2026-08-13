@@ -3,7 +3,7 @@ import type { MarketChallengeConfig, MarketDifficultyConfig, MarketDifficultyId,
 
 export const marketItemPrices: Record<string, number> = { apple: 2, pine_cone: 2, pink_flower: 3, mushroom: 3, acorn: 3 };
 export const marketShelfItemIds = ["apple", "pine_cone", "pink_flower", "mushroom", "acorn"];
-export const marketCustomersPerShift = 5;
+export const marketCustomersPerShift = 3;
 
 export function marketCustomerReminder(customerName: string, requestText: string) {
   const thirdPersonRequest = requestText.replace(/^我(?=想|要)/, customerName);
@@ -109,8 +109,11 @@ function createRandomizedMarketChallenge(template: MarketChallengeConfig, seed: 
   for (let index = shuffledItems.length - 1; index > 0; index -= 1) { const swapIndex = Math.floor(random() * (index + 1)); [shuffledItems[index], shuffledItems[swapIndex]] = [shuffledItems[swapIndex], shuffledItems[index]]; }
   const rule = marketDifficultyRules[template.difficulty]; const itemTypeCount = randomBetween(rule.itemTypeMinimum, rule.itemTypeMaximum); const totalCount = randomBetween(Math.max(rule.itemCountMinimum, itemTypeCount), rule.itemCountMaximum); const order = shuffledItems.slice(0, itemTypeCount).map((assetId) => ({ assetId, count: 1 }));
   for (let remaining = totalCount - itemTypeCount; remaining > 0; remaining -= 1) order[Math.floor(random() * order.length)].count += 1;
-  const requestText = `我想買 ${order.map((item) => `${item.count} ${marketItemSpeech[item.assetId].counter}${assets[item.assetId].label}`).join("和 ")}。`;
-  const requestRuby: RubySegment[] = ["我想買 "]; order.forEach((item, index) => { if (index > 0) requestRuby.push("和 "); const speech = marketItemSpeech[item.assetId]; requestRuby.push(`${item.count} ${speech.counter}`, { text: assets[item.assetId].label, ruby: speech.ruby }); }); requestRuby.push("。");
+  const joiner = (index: number) => index === order.length - 1 ? "和 " : "、";
+  const itemPhrases = order.map((item) => `${item.count} ${marketItemSpeech[item.assetId].counter}${assets[item.assetId].label}`);
+  const requestItems = itemPhrases.length < 2 ? itemPhrases[0] : `${itemPhrases.slice(0, -1).join("、")}和 ${itemPhrases.at(-1)}`;
+  const requestText = `我想買 ${requestItems}。`;
+  const requestRuby: RubySegment[] = ["我想買 "]; order.forEach((item, index) => { if (index > 0) requestRuby.push(joiner(index)); const speech = marketItemSpeech[item.assetId]; requestRuby.push(`${item.count} ${speech.counter}`, { text: assets[item.assetId].label, ruby: speech.ruby }); }); requestRuby.push("。");
   return { ...template, requestText, requestRuby, order, prices: Object.fromEntries(order.map((item) => [item.assetId, marketItemPrices[item.assetId]])) };
 }
 

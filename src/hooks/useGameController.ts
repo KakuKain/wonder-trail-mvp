@@ -42,6 +42,7 @@ export function useGameController(totalStages: number) {
   const [voiceSpeaking, setVoiceSpeaking] = useState(false);
   const [voiceSupported] = useState(() => typeof window !== "undefined" && "speechSynthesis" in window);
   const [voiceMuted, setVoiceMuted] = useState(loadVoiceMutedPreference);
+  const [bpmfFontReady, setBpmfFontReady] = useState(false);
   const voiceMutedRef = useRef(voiceMuted);
   const selectedVoice = useMemo(() => pickXiaohangVoice(game.voices), [game.voices]);
 
@@ -102,6 +103,7 @@ export function useGameController(totalStages: number) {
     game.setStageBackgroundReady(initial.stageBackgroundReady);
     game.setObjects(createPlacedObjects(nextStage));
     game.setWrongClicks(0);
+    game.setForestWrongObjectId(null);
     game.setHintsUsed(0);
     game.setHintVisible(false);
     game.setReward(null);
@@ -189,6 +191,7 @@ export function useGameController(totalStages: number) {
     game.setStageIndex(0);
     game.setObjects(createPlacedObjects(stages[0]));
     game.setWrongClicks(0);
+    game.setForestWrongObjectId(null);
     game.setHintsUsed(0);
     game.setHintVisible(false);
     game.setReward(null);
@@ -249,15 +252,36 @@ export function useGameController(totalStages: number) {
     window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
     return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
   }, [setVoices]);
+  useEffect(() => {
+    if (!("fonts" in document)) return undefined;
+    let active = true;
+    document.fonts.load('1em "Bpmf Zihi Only R"')
+      .then(() => { if (active) setBpmfFontReady(document.fonts.check('1em "Bpmf Zihi Only R"')); })
+      .catch(() => { if (active) setBpmfFontReady(false); });
+    return () => { active = false; };
+  }, []);
 
   const completedStageCount = stages.filter((item) => game.save.completedStageIds.includes(item.id)).length;
+  const forestStageIndexes = stages.flatMap((item, index) => item.world === "forest" ? [index] : []);
+  const forestReplayActive = forestReplayRoute.current.length > 0;
+  const forestStepIndex = forestReplayActive
+    ? forestReplayPosition.current
+    : Math.max(0, forestStageIndexes.indexOf(game.stageIndex));
+  const forestHasNext = forestReplayActive
+    ? forestReplayPosition.current + 1 < forestReplayRoute.current.length
+    : stages[game.stageIndex + 1]?.world === "forest";
   const view = {
     screen: game.screen,
     stage,
     objects: game.objects,
     progress: { completedStageCount, totalStages, percent: Math.round((completedStageCount / totalStages) * 100) },
+    forest: {
+      currentStep: forestStepIndex + 1,
+      totalSteps: forestStageIndexes.length,
+      hasNext: forestHasNext,
+    },
     market: marketView,
-    zhuyin: zhuyinView,
+    zhuyin: { ...zhuyinView, fontReady: bpmfFontReady },
     collection: { open: game.collectionOpen, page: game.collectionPage },
     voice: { supported: voiceSupported, speaking: voiceSpeaking, muted: voiceMuted },
   };

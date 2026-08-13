@@ -30,6 +30,7 @@ describe("MapScreen reset confirmation", () => {
       body={<p>選一個地方開始。</p>}
       replayIcon={<span aria-hidden="true">↻</span>}
       lockIcon={<span aria-hidden="true">鎖</span>}
+      lockedMessage="教室將在後續版本開放。"
       onMapReady={() => undefined}
       onReset={onReset}
       onChapterSelect={() => undefined}
@@ -46,5 +47,41 @@ describe("MapScreen reset confirmation", () => {
     fireEvent.click(screen.getByRole("button", { name: "重新開始遊戲" }));
     fireEvent.click(screen.getByRole("button", { name: "清除進度" }));
     expect(onReset).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows visible feedback when a locked chapter is selected", () => {
+    const onChapterSelect = vi.fn();
+    render(<MapScreen
+      chapters={[...chapters, {
+        id: "classroom",
+        part: "D",
+        className: "classroom-node",
+        playable: false,
+        image: "classroom.webp",
+        position: { x: 70, y: 70, width: 20 },
+        place: "教室",
+        mechanic: "圖片配對",
+        story: "一起玩配對。",
+      }]}
+      hasProgress={false}
+      forestPartAcquired={false}
+      marketPartAcquired={false}
+      mapArt="map.webp"
+      planeArt="plane.webp"
+      characterArt="fox.webp"
+      headline={<strong>零件島</strong>}
+      body={<p>選一個地方開始。</p>}
+      replayIcon={<span aria-hidden="true">↻</span>}
+      lockIcon={<span aria-hidden="true">鎖</span>}
+      lockedMessage="教室將在後續版本開放。"
+      onMapReady={() => undefined}
+      onReset={() => undefined}
+      onChapterSelect={onChapterSelect}
+    />);
+
+    fireEvent.click(screen.getByRole("button", { name: /教室.*尚未開放/ }));
+    expect(screen.getByRole("status").textContent).toContain("教室尚未開放");
+    expect(screen.getByRole("status").textContent).toContain("後續版本開放");
+    expect(onChapterSelect).toHaveBeenCalledWith("classroom", false);
   });
 });

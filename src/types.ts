@@ -147,6 +147,7 @@ export type PlacedObject = {
 export type SaveData = {
   version: number;
   completedStageIds: string[];
+  completedZhuyinLevels: ZhuyinLevelId[];
   stars: number;
   stickers: string[];
   marketProgress: MarketProgress;

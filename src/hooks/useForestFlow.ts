@@ -20,6 +20,7 @@ type Props = {
 
 export function useForestFlow({ game, logEvent, speak, persistSave }: Props) {
   const stageStartedAt = useRef(Date.now());
+  const wrongObjectTimer = useRef<number | null>(null);
   const { hintVisible, screen, setHintVisible, setHintsUsed } = game;
   const stage = stages[game.stageIndex];
 
@@ -73,6 +74,12 @@ export function useForestFlow({ game, logEvent, speak, persistSave }: Props) {
       return;
     }
     const nextWrongClicks = game.wrongClicks + 1;
+    if (wrongObjectTimer.current !== null) window.clearTimeout(wrongObjectTimer.current);
+    game.setForestWrongObjectId(object.instanceId);
+    wrongObjectTimer.current = window.setTimeout(() => {
+      game.setForestWrongObjectId(null);
+      wrongObjectTimer.current = null;
+    }, 520);
     game.setWrongClicks(nextWrongClicks);
     logEvent("wrong_click", currentStage.id, { clickedAssetId: object.assetId, targetAssetIds: (currentStage.targets ?? []).map((target) => target.assetId) });
     speak(pickScript(voiceScripts.wrongClick, nextWrongClicks), { tone: "soft", interrupt: true });
@@ -89,6 +96,9 @@ export function useForestFlow({ game, logEvent, speak, persistSave }: Props) {
     }, stage.assist.hintDelayMs);
     return () => window.clearTimeout(timer);
   }, [hintVisible, logEvent, screen, setHintVisible, setHintsUsed, speak, stage]);
+  useEffect(() => () => {
+    if (wrongObjectTimer.current !== null) window.clearTimeout(wrongObjectTimer.current);
+  }, []);
 
   return { stageStartedAt, completeStage, showForestHint, selectForestObject };
 }

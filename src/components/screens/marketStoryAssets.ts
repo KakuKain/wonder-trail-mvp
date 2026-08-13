@@ -1,6 +1,6 @@
-import marketKeyHandoff from "../../assets/market/customers/market-key-handoff-v2.webp";
-import rabbitOwnerRequest from "../../assets/market/customers/rabbit-owner-request-v2.webp";
-import rabbitOwnerUrgent from "../../assets/market/customers/rabbit-owner-urgent-v2.webp";
+import marketKeyHandoff from "../../assets/market/customers/market-key-handoff-v5.webp";
+import rabbitOwnerRequest from "../../assets/market/customers/rabbit-owner-request-v5.webp";
+import rabbitOwnerUrgent from "../../assets/market/customers/rabbit-owner-urgent-v5.webp";
 import marketStoryBackground from "../../assets/market/market-checkout-background-v2.webp";
 import marketStoryTitle from "../../assets/market/market-story-title-v2.webp";
 

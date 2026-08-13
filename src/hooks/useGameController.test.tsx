@@ -310,6 +310,9 @@ describe("game controller market timers", () => {
     const replayIndexes: number[] = [];
     for (let round = 0; round < 5; round += 1) {
       replayIndexes.push(controller.result.current.stageIndex);
+      expect(controller.result.current.view.forest.currentStep).toBe(round + 1);
+      expect(controller.result.current.view.forest.totalSteps).toBe(5);
+      expect(controller.result.current.view.forest.hasNext).toBe(round < 4);
       act(() => controller.result.current.actions.completeStage());
       act(() => controller.result.current.actions.continueForestAdventure());
     }
@@ -346,6 +349,29 @@ describe("game controller market timers", () => {
     expect(controller.result.current.view.zhuyin.selectedAnswer).toBeNull();
   });
 
+  it("keeps the listening level audio-only and answers with zhuyin", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    act(() => controller.result.current.startStage(6));
+    act(() => controller.result.current.actions.selectZhuyinLevel("listen"));
+
+    const question = controller.result.current.view.zhuyin.question;
+    const puzzle = controller.result.current.view.zhuyin.puzzle;
+    expect(question?.choiceKind).toBe("text");
+    expect(question?.answerParts).toEqual([puzzle?.answer[0]]);
+    expect(question?.choices).not.toContain(puzzle?.imageAssetId);
+    expect(question?.choices).toEqual(["ㄆㄧㄥˊ", "ㄙㄨㄥ", "ㄇㄛˊ"]);
+  });
+
+  it("renders every full-word choice with the same vertical zhuyin treatment", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    act(() => controller.result.current.startStage(6));
+    act(() => controller.result.current.actions.selectZhuyinLevel("word"));
+
+    const question = controller.result.current.view.zhuyin.question;
+    expect(question?.choices).toContain("ㄆㄧㄣˊ");
+    expect(question?.choices.every((choice) => Boolean(question.choiceCharacters?.[choice]))).toBe(true);
+  });
+
   it("finishes the school task only after the last answer is continued", () => {
     const controller = renderHook(() => useGameController(stages.length));
     act(() => controller.result.current.startStage(6));
@@ -362,6 +388,7 @@ describe("game controller market timers", () => {
     expect(controller.result.current.screen).toBe("complete");
     expect(controller.result.current.lastCompletionWasNew).toBe(true);
     expect(controller.result.current.save.completedStageIds).toContain("school_zhuyin_01");
+    expect(controller.result.current.save.completedZhuyinLevels).toContain("initial");
   });
 
   it("builds one syllable in the required order", () => {

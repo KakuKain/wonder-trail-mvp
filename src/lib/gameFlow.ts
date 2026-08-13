@@ -59,7 +59,7 @@ export function forestRewardCopy(assetLabel: string, completionWasNew: boolean) 
     ? {
         collectionAria: `收進圖鑑：${assetLabel}`,
         eyebrow: "收進圖鑑",
-        headline: "成功取得寶物！",
+        headline: `${assetLabel}收進圖鑑了！`,
         detail: `${assetLabel}已收進圖鑑。`,
       }
     : {
@@ -118,6 +118,7 @@ export function resetGameProgress(): SaveData {
   return {
     ...defaultSave,
     completedStageIds: [],
+    completedZhuyinLevels: [],
     stickers: [],
     marketProgress: { ...defaultSave.marketProgress, nextChallengeByDifficulty: {} },
   };
