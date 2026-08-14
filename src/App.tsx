@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { assets } from "./data/assets";
 import { assetImages } from "./data/assetImages";
@@ -240,6 +240,12 @@ export function App() {
             </aside>
           )}
 
+          {stage.mechanic === "search" && game.forestWrongObjectId && (
+            <div className="forest-wrong-feedback" role="status" aria-live="polite">
+              這不是{stage.targetLabel ?? "目標"}，再找找看。
+            </div>
+          )}
+
           {stage.mechanic === "market" && marketPuzzle && marketChallenge ? (
             <MarketStage
               challenge={marketChallenge}
@@ -412,6 +418,11 @@ export function App() {
                 onSpeak={speak}
               />
               <p><RubyText segments={stage.world === "forest" && !lastCompletionWasNew ? ["小航很開心，再一起找找看吧！"] : stage.world === "school" ? [zhuyinMasteryCopy] : dialogue.completeSummary()} /></p>
+              {stage.world === "school" && (
+                <button className="complete-school-next-button" type="button" onClick={actions.startSchool}>
+                  {view.zhuyin.completedLevels.length < view.zhuyin.levels.length ? "繼續下一級 →" : "再選一級 →"}
+                </button>
+              )}
             </div>
           </div>}
           modal={collectionOpen && (
@@ -693,20 +704,21 @@ function ReplayIcon() {
 function RubyText({ segments }: { segments: RubySegment[] }) {
   return (
     <span className="zhuyin-text">
-      {segments.map((segment, index) =>
-        typeof segment === "string" ? (
-          <span className="plain-text" key={`${segment}-${index}`}>{segment}</span>
-        ) : (
-          <span className="bpmf-annotated-text" key={`${segment.text}-${index}`} aria-label={`${segment.text}，${segment.ruby}`}>
-            {Array.from(segment.text).map((character, characterIndex) => (
-              <span className="bpmf-ruby-character" key={`${character}-${characterIndex}`} aria-hidden="true">
-                <span className="bpmf-base-character">{character}</span>
-                <span className="bpmf-zihi-only bpmf-annotation-glyph">{character}</span>
-              </span>
-            ))}
-          </span>
-        )
-      )}
+      {segments.map((segment, index) => {
+        if (typeof segment === "string") {
+          return <span className="plain-text" key={`${segment}-${index}`}>{segment}</span>;
+        }
+        const characters = Array.from(segment.text);
+        const syllables = segment.ruby.trim().split(/\s+/).filter(Boolean);
+        return <span className="bpmf-annotated-text" key={`${segment.text}-${index}`} aria-label={`${segment.text}，${segment.ruby}`}>
+          {characters.map((character, characterIndex) => (
+            <span className="bpmf-ruby-character" key={`${character}-${characterIndex}`} aria-hidden="true">
+              <span className="bpmf-base-character">{character}</span>
+              <span className="bpmf-annotation-glyph">{syllables[characterIndex] ?? ""}</span>
+            </span>
+          ))}
+        </span>;
+      })}
     </span>
   );
 }
@@ -753,22 +765,28 @@ function SearchObject({
 function ObjectIcon({ assetId, compact = false }: { assetId: string; compact?: boolean }) {
   const asset = assets[assetId];
   const imageSrc = assetImages[assetId];
+  const [imageFailed, setImageFailed] = useState(false);
 
-  if (imageSrc) {
+  useEffect(() => setImageFailed(false), [imageSrc]);
+
+  if (imageSrc && !imageFailed) {
     return (
       <img
         className={`object-icon object-image ${compact ? "object-icon-compact" : ""} icon-${asset.kind}`}
         src={imageSrc}
         alt=""
         aria-hidden="true"
+        onError={() => setImageFailed(true)}
       />
     );
   }
 
   return (
     <span
-      className={`object-icon object-image-missing ${compact ? "object-icon-compact" : ""} icon-${asset.kind}`}
+      className={`object-icon object-image-fallback ${compact ? "object-icon-compact" : ""} icon-${asset.kind}`}
       aria-hidden="true"
-    />
+    >
+      {asset.emoji}
+    </span>
   );
 }

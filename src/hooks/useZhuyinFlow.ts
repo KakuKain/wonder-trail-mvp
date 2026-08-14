@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { ageBands } from "../data/ageBands";
 import { stages } from "../data/stages";
 import { completeStageSave } from "../lib/gameFlow";
+import { seededShuffle } from "../lib/random";
 import type { GameEvent, SaveData, ZhuyinLevelConfig, ZhuyinLevelId } from "../types";
 import { VoiceQueue } from "../lib/voiceEngine";
 import { useGameState } from "./useGameState";
@@ -10,10 +12,10 @@ type LogEvent = (event: GameEvent["event"], stageId?: string, payload?: Record<s
 type Speak = (text: string, options?: Parameters<VoiceQueue["speak"]>[1]) => void;
 
 export const zhuyinLevels: ZhuyinLevelConfig[] = [
-  { id: "listen", title: "聽音選注音", shortDescription: "只聽字音，親子一起找注音", ageLabel: "3–5 歲・陪玩", icon: "👂" },
-  { id: "initial", title: "找開頭聲音", shortDescription: "聽一聽，辨認第一個聲符", ageLabel: "4–6 歲", icon: "🔎" },
-  { id: "syllable", title: "拼出一個字", shortDescription: "組合聲符、韻符和聲調", ageLabel: "5–7 歲", icon: "🧩" },
-  { id: "word", title: "完成一個詞", shortDescription: "排列音節，讀出完整詞語", ageLabel: "6 歲起", icon: "📖" },
+  { id: "listen", title: "聽音選注音", shortDescription: "只聽字音，親子一起找注音", ageLabel: ageBands.preschoolWithAdult, icon: "👂" },
+  { id: "initial", title: "找開頭聲音", shortDescription: "聽一聽，辨認第一個聲符", ageLabel: ageBands.preschool, icon: "🔎" },
+  { id: "syllable", title: "拼出一個字", shortDescription: "組合聲符、韻符和聲調", ageLabel: ageBands.earlyReader, icon: "🧩" },
+  { id: "word", title: "完成一個詞", shortDescription: "排列音節，讀出完整詞語", ageLabel: ageBands.schoolAge, icon: "📖" },
 ];
 
 const initialByWord: Record<string, { answer: string; choices: string[] }> = {
@@ -39,34 +41,38 @@ export function useZhuyinFlow({ game, logEvent, speak, persistSave }: {
   const hintTimer = useRef<number | null>(null);
   const finishing = useRef(false);
   const stage = stages[game.stageIndex];
-  const puzzles = useMemo(() => stage.mechanic === "zhuyin" ? (stage.zhuyinPuzzles ?? []) : [], [stage]);
-  const puzzle = puzzles[game.zhuyinQuestionIndex] ?? puzzles[0];
   const level = game.zhuyinLevel;
+  const sourcePuzzles = useMemo(() => stage.mechanic === "zhuyin" ? (stage.zhuyinPuzzles ?? []) : [], [stage]);
+  const puzzles = useMemo(
+    () => seededShuffle(sourcePuzzles, `${game.zhuyinRoundSeed}:${level ?? "levels"}`),
+    [game.zhuyinRoundSeed, level, sourcePuzzles],
+  );
+  const puzzle = puzzles[game.zhuyinQuestionIndex] ?? puzzles[0];
 
   const question = useMemo(() => {
     if (!puzzle || !level) return null;
     if (level === "listen") return {
-      prompt: "聽一聽，選出你聽到的注音", answerParts: [puzzle.answer[0]], choices: puzzles.map((item) => item.answer[0]),
+      prompt: "聽一聽，選出你聽到的注音", answerParts: [puzzle.answer[0]], choices: seededShuffle(puzzles.map((item) => item.answer[0]), `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`),
       choiceCharacters: Object.fromEntries(puzzles.map((item) => [item.answer[0], item.word[0]])), choiceKind: "text" as const,
     };
     if (level === "initial") return {
-      prompt: `「${puzzle.word[0]}」從哪一個聲音開始？`, answerParts: [initialByWord[puzzle.word].answer], choices: initialByWord[puzzle.word].choices, choiceKind: "text" as const,
+      prompt: `「${puzzle.word[0]}」從哪一個聲音開始？`, answerParts: [initialByWord[puzzle.word].answer], choices: seededShuffle(initialByWord[puzzle.word].choices, `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`), choiceKind: "text" as const,
     };
     if (level === "syllable") return {
-      prompt: `把「${puzzle.word[0]}」的聲音拼起來`, answerParts: partsByWord[puzzle.word], choices: partDistractors[puzzle.word], choiceKind: "text" as const,
+      prompt: `把「${puzzle.word[0]}」的聲音拼起來`, answerParts: partsByWord[puzzle.word], choices: seededShuffle(partDistractors[puzzle.word], `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`), choiceKind: "text" as const,
     };
     const answerParts = wordPartsByWord[puzzle.word];
     const distractor = puzzle.word === "蘋果" ? "ㄆㄧㄣˊ" : "ㄍㄨㄛ";
     return {
       prompt: `依序拼出「${puzzle.word}」`, answerParts,
-      choices: [...answerParts].reverse().concat(distractor),
+      choices: seededShuffle([...answerParts, distractor], `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`),
       choiceCharacters: {
         ...Object.fromEntries(answerParts.map((part, index) => [part, puzzle.word[index]])),
         [distractor]: distractor === "ㄆㄧㄣˊ" ? "頻" : "郭",
       },
       choiceKind: "text" as const,
     };
-  }, [level, puzzle, puzzles]);
+  }, [game.zhuyinRoundSeed, level, puzzle, puzzles]);
 
   const answeredCorrectly = !!question && game.zhuyinAnswerParts.length === question.answerParts.length
     && game.zhuyinAnswerParts.every((part, index) => part === question.answerParts[index]);
@@ -79,6 +85,7 @@ export function useZhuyinFlow({ game, logEvent, speak, persistSave }: {
 
   const selectZhuyinLevel = useCallback((nextLevel: ZhuyinLevelId) => {
     game.setZhuyinLevel(nextLevel);
+    game.setZhuyinRoundSeed(Date.now() + Math.random());
     game.setZhuyinQuestionIndex(0);
     game.setZhuyinAnswerParts([]);
     game.setZhuyinSelectedAnswer(null);

@@ -359,7 +359,7 @@ describe("game controller market timers", () => {
     expect(question?.choiceKind).toBe("text");
     expect(question?.answerParts).toEqual([puzzle?.answer[0]]);
     expect(question?.choices).not.toContain(puzzle?.imageAssetId);
-    expect(question?.choices).toEqual(["ㄆㄧㄥˊ", "ㄙㄨㄥ", "ㄇㄛˊ"]);
+    expect(new Set(question?.choices)).toEqual(new Set(["ㄆㄧㄥˊ", "ㄙㄨㄥ", "ㄇㄛˊ"]));
   });
 
   it("renders every full-word choice with the same vertical zhuyin treatment", () => {
@@ -368,7 +368,8 @@ describe("game controller market timers", () => {
     act(() => controller.result.current.actions.selectZhuyinLevel("word"));
 
     const question = controller.result.current.view.zhuyin.question;
-    expect(question?.choices).toContain("ㄆㄧㄣˊ");
+    expect(question?.choices).toHaveLength(3);
+    expect(question?.choices.some((choice) => !question.answerParts.includes(choice))).toBe(true);
     expect(question?.choices.every((choice) => Boolean(question.choiceCharacters?.[choice]))).toBe(true);
   });
 

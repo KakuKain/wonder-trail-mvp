@@ -52,6 +52,7 @@ export function useGameState() {
   const [marketSelectedTotal, setMarketSelectedTotal] = useState<number | null>(null);
   const [marketFeedback, setMarketFeedback] = useState(restoredMarketRound?.feedback ?? "");
   const [zhuyinQuestionIndex, setZhuyinQuestionIndex] = useState(0);
+  const [zhuyinRoundSeed, setZhuyinRoundSeed] = useState(() => Date.now() + Math.random());
   const [zhuyinSelectedAnswer, setZhuyinSelectedAnswer] = useState<string | null>(null);
   const [zhuyinFeedback, setZhuyinFeedback] = useState("");
   const [zhuyinLevel, setZhuyinLevel] = useState<ZhuyinLevelId | null>(null);
@@ -97,6 +98,7 @@ export function useGameState() {
     marketPhase, setMarketPhase, marketBasket, setMarketBasket,
     marketSelectedTotal, setMarketSelectedTotal, marketFeedback, setMarketFeedback,
     zhuyinQuestionIndex, setZhuyinQuestionIndex, zhuyinSelectedAnswer, setZhuyinSelectedAnswer,
+    zhuyinRoundSeed, setZhuyinRoundSeed,
     zhuyinFeedback, setZhuyinFeedback,
     zhuyinLevel, setZhuyinLevel, zhuyinAnswerParts, setZhuyinAnswerParts,
   };

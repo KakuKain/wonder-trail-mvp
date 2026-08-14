@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import type { ZhuyinLevelConfig, ZhuyinLevelId, ZhuyinPuzzleConfig } from "../../types";
 
 type Question = { prompt: string; answerParts: string[]; choices: string[]; choiceCharacters?: Record<string, string>; choiceKind: "image" | "text" };
@@ -8,8 +8,8 @@ function VerticalZhuyinWord({ word, ruby, fontReady }: { word: string; ruby: str
   return <span className="vertical-zhuyin-word" aria-label={`${word}，${ruby}`}>
     {Array.from(word).map((character, index) => <span className="vertical-zhuyin-character" key={`${character}-${index}`}>
       <b aria-hidden="true">{character}</b>{fontReady
-        ? <small className="bpmf-zihi-only" aria-hidden="true">{character}</small>
-        : <small className="plain-zhuyin-fallback" aria-hidden="true">{syllables[index] ?? ruby}</small>}
+        ? <small className="bpmf-zihi-only" aria-hidden="true">{syllables[index] ?? ""}</small>
+        : <small className="plain-zhuyin-fallback" aria-hidden="true">{syllables[index] ?? ""}</small>}
     </span>)}
   </span>;
 }
@@ -28,6 +28,10 @@ export function ZhuyinStage(props: Props) {
   const { levels, completedLevels, level, puzzle, question, questionIndex, totalQuestions, selectedAnswer, answerParts, answeredCorrectly,
     feedback, hintVisible, homeIcon, hintIcon, speakerIcon, voiceSupported, voiceMuted, fontReady,
     onHome, onHint, onSpeak, onVoiceToggle, onLevelSelect, onLevelBack, onAnswer, onUndo, onContinue } = props;
+  useEffect(() => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [level]);
   const levelInfo = levels.find((item) => item.id === level);
   const spokenPrompt = level === "listen" ? puzzle.word[0] : puzzle.word;
   const playPrompt = () => {
@@ -66,7 +70,7 @@ export function ZhuyinStage(props: Props) {
         </div>
         {level !== "listen" && <div className="zhuyin-word-block"><h3>{puzzle.word}</h3></div>}
         {answeredCorrectly && <div className="zhuyin-reveal"><VerticalZhuyinWord word={level === "listen" ? puzzle.word[0] : puzzle.word} ruby={level === "listen" ? puzzle.answer[0] : puzzle.wordRuby} fontReady={fontReady} /></div>}
-        {(level === "syllable" || level === "word") && !answeredCorrectly && <div className="zhuyin-build-zone" aria-label="你的拼音">
+        {(level === "syllable" || level === "word") && !answeredCorrectly && <div className="zhuyin-build-zone" aria-label="你的注音">
           {question.answerParts.map((_, index) => <span key={index} className={answerParts[index] ? "filled" : ""}>{answerParts[index] || "？"}</span>)}
           {answerParts.length > 0 && !answeredCorrectly && <button type="button" onClick={onUndo}>退回一格</button>}
         </div>}

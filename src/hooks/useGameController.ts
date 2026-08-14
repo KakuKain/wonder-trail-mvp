@@ -123,6 +123,7 @@ export function useGameController(totalStages: number) {
     game.setMarketSelectedTotal(null);
     game.setMarketFeedback("");
     game.setZhuyinQuestionIndex(0);
+    game.setZhuyinRoundSeed(Date.now() + Math.random());
     game.setZhuyinSelectedAnswer(null);
     game.setZhuyinFeedback("");
     game.setZhuyinLevel(null);
@@ -208,6 +209,7 @@ export function useGameController(totalStages: number) {
     game.setMarketSelectedTotal(null);
     game.setMarketFeedback("");
     game.setZhuyinQuestionIndex(0);
+    game.setZhuyinRoundSeed(Date.now() + Math.random());
     game.setZhuyinSelectedAnswer(null);
     game.setZhuyinFeedback("");
     game.setZhuyinLevel(null);

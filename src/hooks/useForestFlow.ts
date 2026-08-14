@@ -79,10 +79,10 @@ export function useForestFlow({ game, logEvent, speak, persistSave }: Props) {
     wrongObjectTimer.current = window.setTimeout(() => {
       game.setForestWrongObjectId(null);
       wrongObjectTimer.current = null;
-    }, 520);
+    }, 1200);
     game.setWrongClicks(nextWrongClicks);
     logEvent("wrong_click", currentStage.id, { clickedAssetId: object.assetId, targetAssetIds: (currentStage.targets ?? []).map((target) => target.assetId) });
-    speak(pickScript(voiceScripts.wrongClick, nextWrongClicks), { tone: "soft", interrupt: true });
+    speak(`這不是${currentStage.targetLabel ?? "目標"}，再找找看。`, { tone: "soft", interrupt: true });
     if (nextWrongClicks >= currentStage.assist.maxWrongClicksBeforeHint && !game.hintVisible) showForestHint("assist");
   }, [completeStage, game, logEvent, showForestHint, speak]);
 
