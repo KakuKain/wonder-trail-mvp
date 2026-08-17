@@ -141,11 +141,6 @@ export function App() {
   const lockedClassroomMessage = completedCoreParts === 3
     ? "三個任務都完成了！教室將在後續版本開放。"
     : "教室將在後續版本開放，可以先挑戰森林、市場和學校。";
-  const activeZhuyinLevel = view.zhuyin.levels.find((item) => item.id === view.zhuyin.level);
-  const zhuyinMasteryCopy = view.zhuyin.level === "listen" ? "你會聽字音找出完整注音了！"
-    : view.zhuyin.level === "initial" ? "你會找出一個字的開頭聲音了！"
-      : view.zhuyin.level === "syllable" ? "你會把聲符、韻符和聲調拼起來了！"
-        : "你會依序拼出完整詞語了！";
 
   const stickerAssets = useMemo(
     () => save.stickers.map((stickerId) => assets[stickerId]).filter(Boolean),
@@ -405,24 +400,20 @@ export function App() {
           </div>}
           partReward={stage.world === "forest" && !lastCompletionWasNew ? (
             <div className="complete-replay-mark" aria-label="再次通關"><span>✓</span></div>
-          ) : stage.world === "school" ? <div className="complete-school-reward" aria-label={lastCompletionWasNew ? "取得學校任務貼紙" : "再次完成學校任務"}><ObjectIcon assetId={rewardAssetId} /></div>
-          : <div className="complete-part-reward" aria-label="取得金色螺旋槳零件">
-            <span className="complete-part-glow" aria-hidden="true" />
-            <img src={planePartReward} alt="" aria-hidden="true" />
-          </div>}
+          ) : (
+            <div className="complete-part-reward" aria-label="取得金色螺旋槳零件">
+              <span className="complete-part-glow" aria-hidden="true" />
+              <img src={planePartReward} alt="" aria-hidden="true" />
+            </div>
+          )}
           caption={<div className="complete-caption">
             <div>
               <HeadingWithAudio
-                segments={stage.world === "forest" && !lastCompletionWasNew ? ["恭喜再次通關！"] : stage.world === "school" ? [`${activeZhuyinLevel?.title ?? "聲音任務"}完成！`] : dialogue.completeHeadline}
-                speakText={stage.world === "forest" && !lastCompletionWasNew ? "恭喜再次通關！" : stage.world === "school" ? `${activeZhuyinLevel?.title ?? "聲音任務"}完成！${zhuyinMasteryCopy}` : "今天的森林書完成囉！"}
+                segments={stage.world === "forest" && !lastCompletionWasNew ? ["恭喜再次通關！"] : dialogue.completeHeadline}
+                speakText={stage.world === "forest" && !lastCompletionWasNew ? "恭喜再次通關！" : "今天的森林書完成囉！"}
                 onSpeak={speak}
               />
-              <p><RubyText segments={stage.world === "forest" && !lastCompletionWasNew ? ["小航很開心，再一起找找看吧！"] : stage.world === "school" ? [zhuyinMasteryCopy] : dialogue.completeSummary()} /></p>
-              {stage.world === "school" && (
-                <button className="complete-school-next-button" type="button" onClick={actions.startSchool}>
-                  {view.zhuyin.completedLevels.length < view.zhuyin.levels.length ? "繼續下一級 →" : "再選一級 →"}
-                </button>
-              )}
+              <p><RubyText segments={stage.world === "forest" && !lastCompletionWasNew ? ["小航很開心，再一起找找看吧！"] : dialogue.completeSummary()} /></p>
             </div>
           </div>}
           modal={collectionOpen && (
@@ -708,15 +699,11 @@ function RubyText({ segments }: { segments: RubySegment[] }) {
         if (typeof segment === "string") {
           return <span className="plain-text" key={`${segment}-${index}`}>{segment}</span>;
         }
-        const characters = Array.from(segment.text);
-        const syllables = segment.ruby.trim().split(/\s+/).filter(Boolean);
         return <span className="bpmf-annotated-text" key={`${segment.text}-${index}`} aria-label={`${segment.text}，${segment.ruby}`}>
-          {characters.map((character, characterIndex) => (
-            <span className="bpmf-ruby-character" key={`${character}-${characterIndex}`} aria-hidden="true">
-              <span className="bpmf-base-character">{character}</span>
-              <span className="bpmf-annotation-glyph">{syllables[characterIndex] ?? ""}</span>
-            </span>
-          ))}
+          {Array.from(segment.text).map((character, characterIndex) => <span className="bpmf-ruby-character" key={`${character}-${characterIndex}`}>
+            <span className="bpmf-base-text">{character}</span>
+            <span className="bpmf-annotation-layer" aria-hidden="true">{character}</span>
+          </span>)}
         </span>;
       })}
     </span>

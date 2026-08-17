@@ -1,6 +1,6 @@
 import { useEffect, type CSSProperties, type ReactNode } from "react";
 import { assets } from "../../data/assets";
-import { isMarketDifficultyUnlocked, marketCalculationTerms, marketItemSpeech, marketPrice, marketQuantityPrompt, marketRequiredCount, marketShelfItemIds } from "../../lib/market";
+import { isMarketDifficultyUnlocked, marketCalculationTerms, marketCounterRuby, marketItemSpeech, marketPrice, marketQuantityPrompt, marketRequiredCount, marketShelfItemIds } from "../../lib/market";
 import type { MarketPhase } from "../../hooks/useGameState";
 import type { MarketChallengeConfig, MarketCustomerConfig, MarketDifficultyConfig, MarketDifficultyId, RubySegment } from "../../types";
 import { MarketCompleteScreen } from "./MarketCompleteScreen";
@@ -60,7 +60,7 @@ type Props = {
   onContinue: () => void;
 };
 
-export function MarketStage({ challenge, customer, completionWasNew, currencyIntroText, currencyIntroRuby, showCurrencyIntro, difficulties, activeDifficulty, completedDifficulties, basket, phase, feedback, customerNumber, customerTarget, total, answerOptions, selectedTotal, hintVisible, renderObjectIcon, renderRubyText, homeIcon, hintIcon, lockIcon, speakerIcon, voiceSupported, voiceSpeaking, voiceMuted, onHome, onHint, onSpeak, onVoiceToggle, onStoryStart, onReplay, onDifficultySelect, onItemSelect, onAnswerSelect, onContinue }: Props) {
+export function MarketStage({ challenge, customer, completionWasNew, currencyIntroText, currencyIntroRuby, showCurrencyIntro, difficulties, activeDifficulty, completedDifficulties, basket, phase, feedback, total, answerOptions, selectedTotal, hintVisible, renderObjectIcon, renderRubyText, homeIcon, hintIcon, lockIcon, speakerIcon, voiceSupported, voiceSpeaking, voiceMuted, onHome, onHint, onSpeak, onVoiceToggle, onStoryStart, onReplay, onDifficultySelect, onItemSelect, onAnswerSelect, onContinue }: Props) {
   useEffect(() => {
     [marketCheckoutBackground, marketCheckoutBasketArt, marketBasketFrontArt, marketCashRegisterArt, marketCashRegisterSuccessArt, marketCheckoutCabinetArt, customer.image].forEach((source) => {
       const image = new Image();
@@ -99,7 +99,6 @@ export function MarketStage({ challenge, customer, completionWasNew, currencyInt
       ? `一共有 ${total} ${marketItemSpeech[numberRecognitionItem.assetId]?.counter ?? "個"}${assets[numberRecognitionItem.assetId].label}，你數對了！`
       : `一共有 ${total} 個商品，你數對了！`
     : `一共 ${total} 貝，你算對了！`;
-  const visibleAnswerOptions = answerLocked ? answerOptions.filter((value) => value === total) : answerOptions;
   const difficultyControls = difficulties.map((difficulty) => {
     const unlocked = isMarketDifficultyUnlocked(difficulty, completedDifficulties);
     const active = activeDifficulty === difficulty.id;
@@ -117,7 +116,7 @@ export function MarketStage({ challenge, customer, completionWasNew, currencyInt
     </div>
     <div className="market-sky" aria-hidden="true" />
     {phase !== "pick" && <img className="market-checkout-background" src={marketCheckoutBackground} alt="" aria-hidden="true" />}
-    {phase !== "pick" && <div className="market-level-board market-level-board-checkout" aria-label={`目前關卡：${activeDetails.label}，第 ${customerNumber} 位，共 ${customerTarget} 位客人`}><img className="market-art-sign" src={marketSignArt} alt="" aria-hidden="true" /><div className="market-current-level"><small>第 {customerNumber}/{customerTarget} 位客人</small><strong>{activeDetails.label}</strong><span>{activeDetails.ageLabel}</span></div></div>}
+    {phase !== "pick" && <div className="market-level-board market-level-board-checkout" aria-label={`目前關卡：${activeDetails.label}`}><img className="market-art-sign" src={marketSignArt} alt="" aria-hidden="true" /><div className="market-current-level"><strong>{activeDetails.label}</strong><span>{activeDetails.ageLabel}</span></div></div>}
     {phase === "pick" ? <div className="market-order-screen market-order-screen-art">
       <img className="market-art-background" src={marketStallBackground} alt="" aria-hidden="true" />
       <div className="market-level-board"><img className="market-art-sign" src={marketSignArt} alt="" aria-hidden="true" /><div className="market-difficulty-row market-difficulty-row-art" aria-label="市場難度">{difficultyControls}</div></div>
@@ -128,9 +127,11 @@ export function MarketStage({ challenge, customer, completionWasNew, currencyInt
       })}</div></section>
       <section className="market-order-basket market-order-basket-art" aria-label="客人的籃子"><img src={marketBasketArt} alt="" aria-hidden="true" /><div className="market-art-basket-items" aria-live="polite">{selectedBasketItems.map((item) => <span key={item.key}>{renderObjectIcon(item.assetId, true)}</span>)}</div></section>
       <section className="market-dialogue market-customer-dialogue market-customer-dialogue-art" aria-label="客人訂單">
-        <div className={`market-customer-avatar market-customer-${customer.id}`} role="img" aria-label={`${customer.name}的頭像`}><img src={customer.image} alt="" /></div>
+        <div className="market-customer-identity">
+          <div className={`market-customer-avatar market-customer-${customer.id}`} role="img" aria-label={`${customer.name}的頭像`}><img src={customer.image} alt="" /></div>
+          <p className="eyebrow market-customer-name">{renderRubyText([{ text: customer.name, ruby: customer.ruby }])}</p>
+        </div>
         <div className="market-dialogue-copy">
-          <p className="eyebrow market-customer-name">{renderRubyText([{ text: customer.name, ruby: customer.ruby }])}<span>第 {customerNumber}/{customerTarget} 位</span></p>
           <div className="audio-heading">
             <button
               className="audio-button"
@@ -142,11 +143,14 @@ export function MarketStage({ challenge, customer, completionWasNew, currencyInt
               {speakerIcon}
             </button>
             <h2 className="market-order-heading" aria-label={challenge.requestText}>
-              <span className="market-order-lead">我要</span>
+              <span className="market-order-lead">{renderRubyText([{ text: "我要", ruby: "ㄨㄛˇ ㄧㄠˋ" }])}</span>
               <span className="market-order-items">
                 {challenge.order.map((item) => <span className="market-order-chip" key={item.assetId}>
-                  <b>{item.count}</b><small>{marketItemSpeech[item.assetId]?.counter ?? "個"}</small>
-                  {renderRubyText([{ text: assets[item.assetId].label, ruby: marketItemSpeech[item.assetId]?.ruby ?? "" }])}
+                  <b>{item.count}</b>
+                  {renderRubyText([
+                    { text: marketItemSpeech[item.assetId]?.counter ?? "個", ruby: marketCounterRuby[marketItemSpeech[item.assetId]?.counter ?? "個"] ?? "ㄍㄜˋ" },
+                    { text: assets[item.assetId].label, ruby: marketItemSpeech[item.assetId]?.ruby ?? "" },
+                  ])}
                 </span>)}
               </span>
             </h2>
@@ -166,8 +170,10 @@ export function MarketStage({ challenge, customer, completionWasNew, currencyInt
           {isNumberRecognition ? answerLocked ? <p className="market-number-success">一個一個數，全部數對了！</p> : <div className="market-number-question" aria-label={initialCheckoutPrompt}>{numberRecognitionItem ? <><span className="market-number-prompt">籃子裡有幾{marketItemSpeech[numberRecognitionItem.assetId]?.counter ?? "個"}</span><span className="market-number-subject">{renderObjectIcon(numberRecognitionItem.assetId, true)}<b>{assets[numberRecognitionItem.assetId].label}</b><strong aria-hidden="true">？</strong></span></> : <span className="market-number-prompt">籃子裡一共有幾個商品？</span>}</div> : <div className={`market-equation ${calculationTerms.length > 2 ? "market-equation-dense" : ""}`} aria-label="商品算式">{calculationTerms.map((term, index) => <span className="market-equation-part" key={term.key}>{index > 0 && <em aria-hidden="true">+</em>}<span>{renderObjectIcon(term.assetId, true)}<b>{assets[term.assetId].label}</b><strong>{term.price} 貝{usesMultiplication && term.count > 1 ? ` × ${term.count}` : ""}</strong></span></span>)}{!answerLocked && <span className="market-equation-result"><em aria-hidden="true">=</em><strong className="market-equation-answer">{selectedTotal ?? "?"}</strong></span>}</div>}
           {!answerLocked && <p className="market-register-feedback" aria-live="polite">{hintVisible ? (isNumberRecognition ? "跟著亮光，一個一個數" : "跟著亮光，一個一個算") : checkoutFeedback || (isNumberRecognition ? "選出正確的數字" : "選出正確的總價")}</p>}
         </div>
-        <div className={`market-answer-options market-register-keys ${answerLocked ? "market-register-keys-correct" : ""}`}>
-          {visibleAnswerOptions.map((value) => <button className={`market-answer-button ${selectedTotal === value ? "selected" : ""} ${selectedTotal === value && value !== total ? "wrong" : ""} ${selectedTotal === value && value === total ? "correct" : ""}`} type="button" key={value} onClick={() => onAnswerSelect(value)} aria-label={`選擇 ${value}${isNumberRecognition ? " 個" : " 貝"}`} disabled={answerLocked}><strong>{value}</strong>{!isNumberRecognition && <span>貝</span>}</button>)}
+        <div className={`market-register-controls ${answerLocked ? "market-register-controls-correct" : ""}`}>
+          <div className="market-answer-options market-register-keys">
+            {answerOptions.map((value) => <button className={`market-answer-button ${selectedTotal === value ? "selected" : ""} ${selectedTotal === value && value !== total ? "wrong" : ""} ${selectedTotal === value && value === total ? "correct" : ""}`} type="button" key={value} onClick={() => onAnswerSelect(value)} aria-label={`選擇 ${value}${isNumberRecognition ? " 個" : " 貝"}`} disabled={answerLocked}><strong>{value}</strong>{!isNumberRecognition && <span>貝</span>}</button>)}
+          </div>
           {answerLocked && <button className="market-next-order-button" type="button" aria-label="前往下一關" onClick={onContinue}><span>前往</span><strong>下一關</strong></button>}
         </div>
       </section>

@@ -28,6 +28,7 @@ export const marketItemSpeech: Record<string, { counter: string; ruby: string }>
   apple: { counter: "顆", ruby: "ㄆㄧㄥˊ ㄍㄨㄛˇ" }, pine_cone: { counter: "顆", ruby: "ㄙㄨㄥ ㄍㄨㄛˇ" },
   pink_flower: { counter: "朵", ruby: "ㄈㄣˇ ㄏㄨㄥˊ ㄏㄨㄚ" }, mushroom: { counter: "個", ruby: "ㄇㄛˊ ㄍㄨ" }, acorn: { counter: "顆", ruby: "ㄒㄧㄤˋ ㄍㄨㄛˇ" },
 };
+export const marketCounterRuby: Record<string, string> = { 顆: "ㄎㄜ", 朵: "ㄉㄨㄛˇ", 個: "ㄍㄜˋ" };
 
 export function marketPrice(challenge: MarketChallengeConfig, assetId: string) { return challenge.prices[assetId] ?? marketItemPrices[assetId] ?? 0; }
 export function marketTotal(challenge: MarketChallengeConfig) { return challenge.order.reduce((sum, item) => sum + marketPrice(challenge, item.assetId) * item.count, 0); }

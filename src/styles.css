@@ -11,25 +11,19 @@
 }
 
 @font-face {
-  font-family: "BpmfGenSenRounded";
-  src: url("./assets/BpmfGenSenRounded-R-subset.woff2") format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Bpmf Zihi Only R";
+  font-family: "BpmfZihiOnly";
   src: url("./assets/BpmfZihiOnly-R.ttf") format("truetype");
   font-weight: 400;
   font-display: block;
 }
 
 @font-face {
-  font-family: "BpmfGenSenRounded";
-  src: url("./assets/BpmfGenSenRounded-B-subset.woff2") format("woff2");
-  font-weight: 900;
-  font-display: swap;
+  font-family: "BpmfZihiBox";
+  src: url("./assets/BpmfZihiBox-R.ttf") format("truetype");
+  font-weight: 400;
+  font-display: block;
 }
+
 
 * {
   box-sizing: border-box;
@@ -197,34 +191,50 @@ p {
 }
 
 .bpmf-annotated-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.05em;
+  display: inline;
+  max-width: 100%;
+  color: currentColor;
+  font-family: var(--child-font);
+  line-height: inherit;
+  vertical-align: baseline;
   white-space: nowrap;
 }
 
 .bpmf-ruby-character {
-  display: inline-grid;
-  grid-template-columns: auto minmax(0, 1.05em);
-  align-items: center;
-  column-gap: 0.04em;
-  line-height: 1;
+  position: relative;
+  display: inline-block;
+  /* The Box font's annotation occupies the right half of its 1.5em glyph
+     box. Reserve that space so the following character cannot cover it. */
+  padding-right: 0.5em;
+  line-height: inherit;
+  vertical-align: baseline;
 }
 
-.bpmf-base-character {
-  grid-column: 1;
+.bpmf-base-text {
+  position: relative;
+  z-index: 0;
 }
 
-.bpmf-annotation-glyph {
-  grid-column: 2;
-  min-width: 0.82em;
-  font-family: "Bpmf Zihi Only R", var(--ui-number-font);
-  font-size: 0.72em;
+/* BpmfZihiBox reserves a right-side 注音 column. Hide its left guide box and
+   keep only the embedded 注音 glyph, so each Chinese character remains the
+   visible base while the font supplies the reference-style side annotation. */
+.bpmf-annotation-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: block;
+  width: 1.5em;
+  height: 1em;
+  overflow: hidden;
+  clip-path: inset(0 0 0 1em);
+  color: currentColor;
+  font-family: "BpmfZihiBox";
+  font-size: 1em;
+  font-weight: 400;
   line-height: 1;
-  letter-spacing: 0;
-  writing-mode: vertical-rl;
-  text-orientation: upright;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .target-pill {
@@ -2771,15 +2781,24 @@ p {
   letter-spacing: 0.02em;
 }
 
-.market-register-keys {
+.market-register-controls {
   position: absolute;
   top: 61%;
   right: 14%;
   left: 13%;
   z-index: 3;
-  gap: 4%;
+  display: grid;
   width: auto;
   height: 25%;
+  margin: 0;
+}
+
+.market-register-keys {
+  position: relative;
+  display: grid;
+  gap: 4%;
+  width: auto;
+  height: 100%;
   margin: 0;
 }
 
@@ -2850,13 +2869,28 @@ p {
   line-height: 1;
 }
 
-.market-register-keys-correct {
-  right: 13%;
-  left: 13%;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+.market-register-controls-correct {
+  top: 57%;
+  height: 39%;
+  grid-template-rows: minmax(0, 1fr) minmax(44px, auto);
+  gap: 6px;
 }
 
-.market-register-keys-correct .market-answer-button.correct {
+.market-register-controls-correct .market-register-keys {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.market-register-controls-correct .market-answer-button:not(.correct) {
+  opacity: 1;
+  color: #788074;
+  background: rgba(207, 213, 198, 0.82);
+  box-shadow:
+    inset 0 0 0 3px rgba(126, 137, 116, 0.48),
+    0 2px 0 rgba(92, 105, 87, 0.18);
+  filter: grayscale(0.2);
+}
+
+.market-register-controls-correct .market-answer-button.correct {
   background: rgba(225, 255, 177, 0.42);
   color: #356f35;
   box-shadow:
@@ -2867,12 +2901,13 @@ p {
   transform: none;
 }
 
-.market-register-keys-correct .market-answer-button.correct strong,
-.market-register-keys-correct .market-answer-button.correct span {
+.market-register-controls-correct .market-answer-button.correct strong,
+.market-register-controls-correct .market-answer-button.correct span {
   color: #4b3025;
 }
 
 .market-next-order-button {
+  grid-column: 1 / -1;
   display: grid;
   place-content: center;
   gap: 0;
@@ -2930,6 +2965,10 @@ p {
 
 .market-register-keys .market-answer-button:disabled:not(.correct) {
   color: rgba(107, 61, 33, 0.54);
+}
+
+.market-register-controls-correct .market-register-keys .market-answer-button:disabled:not(.correct) {
+  color: #788074;
 }
 
 @keyframes market-audio-pulse {
@@ -3469,10 +3508,22 @@ p {
   backdrop-filter: blur(7px);
 }
 
-.market-customer-avatar {
+.market-customer-identity {
   position: absolute;
-  top: 13px;
+  top: 11px;
   left: 14px;
+  z-index: 2;
+  display: flex;
+  width: 76px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.market-customer-avatar {
+  position: relative;
+  top: auto;
+  left: auto;
   display: grid;
   width: 68px;
   height: 68px;
@@ -3506,29 +3557,24 @@ p {
 .market-customer-dialogue-art .market-dialogue-copy {
   display: grid;
   gap: 3px;
-  width: min(390px, 100%);
+  width: min(390px, calc(100% - 92px));
   margin: 0 auto;
 }
 
 .market-customer-dialogue-art .market-customer-name {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  justify-content: space-between;
+  display: block;
+  width: 100%;
+  overflow: visible;
   margin: 0;
   color: #57754c;
-  font-size: 0.94rem;
-}
-
-.market-customer-dialogue-art .market-customer-name > span {
-  color: #8a6639;
-  font-family: var(--ui-number-font);
   font-size: 0.76rem;
+  line-height: 1.12;
+  text-align: center;
   white-space: nowrap;
 }
 
 .market-customer-dialogue-art h2 {
-  font-size: clamp(1.14rem, 4.35vw, 1.44rem);
+  font-size: clamp(1rem, 4vw, 1.44rem);
   line-height: 1.14;
 }
 
@@ -3555,14 +3601,23 @@ p {
 .market-order-chip {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 3px 6px;
+  gap: 1px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 4px;
   border-radius: 9px;
   background: rgba(255, 246, 207, 0.76);
   box-shadow: inset 0 0 0 1px rgba(107, 70, 52, 0.16);
   font-size: 0.88em;
   line-height: 1.05;
   white-space: nowrap;
+}
+
+/* Order chips have a compact width beside the audio button. Keep the
+   Chinese label and its 注音 together without letting the chip escape the
+   dialogue card on a phone. */
+.market-order-chip .bpmf-annotated-text {
+  min-width: 0;
 }
 
 .market-order-chip > b {
@@ -5416,6 +5471,33 @@ p {
   text-align: center;
 }
 
+.zhuyin-preparing {
+  width: min(560px, 100%);
+  margin: clamp(72px, 16svh, 130px) auto 0;
+  padding: 34px 22px;
+  border: 4px solid rgba(117, 154, 104, 0.72);
+  border-radius: 28px;
+  color: #4b654c;
+  background: rgba(255, 250, 224, 0.92);
+  box-shadow: 0 8px 0 rgba(80, 105, 66, 0.16), 0 16px 30px rgba(67, 86, 52, 0.12);
+  text-align: center;
+}
+
+.zhuyin-preparing .eyebrow {
+  margin: 0 0 6px;
+}
+
+.zhuyin-preparing h2 {
+  margin: 0;
+  color: #493527;
+  font-size: clamp(1.45rem, 5vw, 2rem);
+}
+
+.zhuyin-preparing p:last-child {
+  margin: 10px 0 0;
+  font-weight: 800;
+}
+
 .level-select-header p:last-child {
   margin: 10px 0 0;
   color: #66806c;
@@ -5475,29 +5557,32 @@ p {
 .zhuyin-progress {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: min(320px, 86%);
+  justify-content: center;
+  width: min(160px, 60%);
   margin: 14px auto 0;
   color: #5f7f5a;
   font-weight: 900;
 }
 
-.zhuyin-progress-track {
-  display: block;
-  flex: 1;
-  height: 10px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.62);
-  box-shadow: inset 0 1px 3px rgba(64, 77, 44, 0.18);
+.zhuyin-progress-dots {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
 }
 
-.zhuyin-progress-track span {
+.zhuyin-progress-dots i {
   display: block;
-  height: 100%;
-  border-radius: inherit;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #79a96b;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.zhuyin-progress-dots i.active {
   background: #79a96b;
-  transition: width 240ms ease;
+  transform: scale(1.12);
 }
 
 .zhuyin-card {
@@ -5676,22 +5761,24 @@ p {
 .plain-zhuyin-fallback {
   max-width: 1.3em;
   color: #315e40;
-  font-family: var(--ui-number-font);
+  font-family: "BpmfZihiOnly", var(--ui-number-font);
   font-size: 1.2rem !important;
   line-height: 1.05 !important;
   writing-mode: vertical-rl;
 }
 
-.bpmf-zihi-only {
+.bpmf-rounded {
   display: inline-block;
   min-width: 1.2em;
-  font-family: "Bpmf Zihi Only R", sans-serif;
+  font-family: "BpmfZihiOnly", var(--child-font);
   font-weight: 400;
   line-height: 1;
 }
 
-.zhuyin-choice-grid .bpmf-zihi-only {
-  font-size: clamp(3.2rem, 12vw, 5rem);
+.zhuyin-choice-grid .bpmf-rounded {
+  /* Choices contain the full syllable, so size the rounded Bpmf string to
+     stay inside a preschool-sized button instead of overflowing the grid. */
+  font-size: clamp(1rem, 5vw, 1.2rem);
 }
 
 .plain-zhuyin-choice {
@@ -5700,7 +5787,7 @@ p {
   letter-spacing: .04em;
 }
 
-.vertical-zhuyin-character .bpmf-zihi-only {
+.vertical-zhuyin-character .bpmf-rounded {
   font-size: clamp(2rem, 7vw, 2.8rem);
 }
 

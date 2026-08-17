@@ -10,7 +10,7 @@ import { VoiceQueue } from "../lib/voiceEngine";
 import { useForestFlow } from "./useForestFlow";
 import { useGameState } from "./useGameState";
 import { useMarketFlow } from "./useMarketFlow";
-import { useZhuyinFlow } from "./useZhuyinFlow";
+import { useZhuyinFlow, zhuyinLevels } from "./useZhuyinFlow";
 
 const voiceMutedStorageKey = "wonder-trail:voice-muted";
 
@@ -145,8 +145,13 @@ export function useGameController(totalStages: number) {
     }
     forestReplayRoute.current = [];
     forestReplayPosition.current = 0;
-    startStage(index ?? worldStageIndexes[0] ?? 0);
-  }, [game.save.completedStageIds, startStage]);
+    const startIndex = index ?? worldStageIndexes[0] ?? 0;
+    startStage(startIndex);
+    if (world === "school") {
+      const nextLevel = zhuyinLevels.find((item) => !game.save.completedZhuyinLevels.includes(item.id)) ?? zhuyinLevels[0];
+      zhuyinActions.selectZhuyinLevel(nextLevel.id);
+    }
+  }, [game.save.completedStageIds, game.save.completedZhuyinLevels, startStage, zhuyinActions]);
 
   const continueForestAdventure = useCallback(() => {
     if (stage.world !== "forest") return;
@@ -257,8 +262,11 @@ export function useGameController(totalStages: number) {
   useEffect(() => {
     if (!("fonts" in document)) return undefined;
     let active = true;
-    document.fonts.load('1em "Bpmf Zihi Only R"')
-      .then(() => { if (active) setBpmfFontReady(document.fonts.check('1em "Bpmf Zihi Only R"')); })
+    Promise.all([
+      document.fonts.load('1em "BpmfZihiOnly"'),
+      document.fonts.load('1em "BpmfZihiBox"'),
+    ])
+      .then(() => { if (active) setBpmfFontReady(document.fonts.check('1em "BpmfZihiOnly"')); })
       .catch(() => { if (active) setBpmfFontReady(false); });
     return () => { active = false; };
   }, []);

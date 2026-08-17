@@ -8,7 +8,7 @@ function VerticalZhuyinWord({ word, ruby, fontReady }: { word: string; ruby: str
   return <span className="vertical-zhuyin-word" aria-label={`${word}，${ruby}`}>
     {Array.from(word).map((character, index) => <span className="vertical-zhuyin-character" key={`${character}-${index}`}>
       <b aria-hidden="true">{character}</b>{fontReady
-        ? <small className="bpmf-zihi-only" aria-hidden="true">{syllables[index] ?? ""}</small>
+        ? <small className="bpmf-rounded" aria-hidden="true">{syllables[index] ?? ""}</small>
         : <small className="plain-zhuyin-fallback" aria-hidden="true">{syllables[index] ?? ""}</small>}
     </span>)}
   </span>;
@@ -27,12 +27,14 @@ type Props = {
 export function ZhuyinStage(props: Props) {
   const { levels, completedLevels, level, puzzle, question, questionIndex, totalQuestions, selectedAnswer, answerParts, answeredCorrectly,
     feedback, hintVisible, homeIcon, hintIcon, speakerIcon, voiceSupported, voiceMuted, fontReady,
-    onHome, onHint, onSpeak, onVoiceToggle, onLevelSelect, onLevelBack, onAnswer, onUndo, onContinue } = props;
+    onHome, onHint, onSpeak, onVoiceToggle, onAnswer, onUndo, onContinue } = props;
   useEffect(() => {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }, [level]);
   const levelInfo = levels.find((item) => item.id === level);
+  const completedAfterCurrent = new Set(level ? [...completedLevels, level] : completedLevels);
+  const hasNextPractice = levels.some((item) => !completedAfterCurrent.has(item.id));
   const spokenPrompt = level === "listen" ? puzzle.word[0] : puzzle.word;
   const playPrompt = () => {
     if (voiceMuted) onVoiceToggle();
@@ -47,20 +49,14 @@ export function ZhuyinStage(props: Props) {
       </div>
     </div>
 
-    {!level || !question ? <>
-      <header className="zhuyin-header level-select-header"><p className="eyebrow">學校聲音書</p><h2>今天想練習哪一種？</h2><p>每個孩子都可以從適合自己的等級開始</p></header>
-      <section className="zhuyin-level-grid" aria-label="選擇學習等級">
-        {levels.map((item, index) => <button key={item.id} type="button" className={`zhuyin-level-card level-${index + 1} ${completedLevels.includes(item.id) ? "completed" : ""}`} onClick={() => onLevelSelect(item.id)} aria-label={`${item.title}${completedLevels.includes(item.id) ? "，已完成" : ""}`}>
-          <span className="zhuyin-level-number">第 {index + 1} 級</span><span className="zhuyin-level-icon" aria-hidden="true">{item.icon}</span>
-          {completedLevels.includes(item.id) && <span className="zhuyin-level-complete" aria-hidden="true">✓</span>}
-          <strong>{item.title}</strong><span>{item.shortDescription}</span><small>{item.ageLabel}</small>
-        </button>)}
-      </section>
-    </> : <>
+    {!level || !question ? <section className="zhuyin-preparing" role="status" aria-live="polite">
+      <p className="eyebrow">學校聲音練習</p><h2>準備下一個聲音遊戲</h2><p>小航正在準備題目，一下就開始囉！</p>
+    </section> : <>
       <header className="zhuyin-header">
-        <button type="button" className="zhuyin-level-back" onClick={onLevelBack}>‹ 更換等級</button>
         <p className="eyebrow">{levelInfo?.title}</p><h2>{question.prompt}</h2>
-        <div className="zhuyin-progress" aria-label={`第 ${questionIndex + 1} 題，共 ${totalQuestions} 題`}><span className="zhuyin-progress-track"><span style={{ width: `${((questionIndex + 1) / totalQuestions) * 100}%` }} /></span><strong>{questionIndex + 1}/{totalQuestions}</strong></div>
+        <div className="zhuyin-progress" aria-label={`練習進度，現在是第 ${questionIndex + 1} 題`}>
+          <span className="zhuyin-progress-dots" aria-hidden="true">{Array.from({ length: totalQuestions }, (_, index) => <i key={index} className={index <= questionIndex ? "active" : ""} />)}</span>
+        </div>
       </header>
       <section className="zhuyin-card" aria-label={question.prompt}>
         <div className={`zhuyin-listen-panel ${level === "listen" ? "audio-only" : ""}`}>
@@ -76,11 +72,11 @@ export function ZhuyinStage(props: Props) {
         </div>}
         <div className={`zhuyin-choice-grid ${question.choiceKind === "image" ? "image-choices" : ""}`} role="group" aria-label="答案選項">
           {question.choices.map((choice) => <button className={`zhuyin-choice-button ${selectedAnswer === choice ? "wrong" : ""} ${answeredCorrectly && question.answerParts.includes(choice) ? "correct" : ""}`} type="button" key={choice} aria-label={`選擇${choice}`} onClick={() => onAnswer(choice)} disabled={answeredCorrectly}>
-            {question.choiceCharacters?.[choice] && fontReady ? <span className="bpmf-zihi-only" aria-hidden="true">{question.choiceCharacters[choice]}</span> : <span className="plain-zhuyin-choice">{choice}</span>}
+            {fontReady ? <span className="bpmf-rounded" aria-hidden="true">{choice}</span> : <span className="plain-zhuyin-choice">{choice}</span>}
           </button>)}
         </div>
         <p className={`zhuyin-feedback ${answeredCorrectly ? "success" : selectedAnswer ? "retry" : ""}`} role="status" aria-live="polite">{feedback || (level === "listen" ? "按播放題目，再選注音" : level === "initial" ? "選出第一個聲符" : "依序放入正確的聲音積木")}</p>
-        {answeredCorrectly && <button className="zhuyin-next-button" type="button" onClick={onContinue}><span>{questionIndex + 1 < totalQuestions ? "下一題" : "完成這個等級"}</span><span aria-hidden="true">→</span></button>}
+        {answeredCorrectly && <button className="zhuyin-next-button" type="button" onClick={onContinue}><span>{questionIndex + 1 < totalQuestions ? "下一題" : hasNextPractice ? "繼續練習" : "完成今天練習"}</span><span aria-hidden="true">→</span></button>}
       </section>
     </>}
   </div>;

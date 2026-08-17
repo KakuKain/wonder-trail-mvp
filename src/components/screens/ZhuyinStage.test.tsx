@@ -42,10 +42,10 @@ function renderStage(overrides: Partial<Parameters<typeof ZhuyinStage>[0]> = {})
 }
 
 describe("ZhuyinStage fallbacks and mastery", () => {
-  it("marks each independently completed level", () => {
+  it("does not interrupt the child with a level picker", () => {
     renderStage({ completedLevels: ["initial"] });
-    expect(screen.getByRole("button", { name: "找開頭聲音，已完成" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "聽音選注音" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "準備下一個聲音遊戲" })).toBeTruthy();
+    expect(screen.queryByText(/第 \d+ 級/)).toBeNull();
   });
 
   it("shows a parent reading cue and real zhuyin when speech and the special font are unavailable", () => {

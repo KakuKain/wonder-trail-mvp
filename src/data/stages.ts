@@ -1,4 +1,4 @@
-import type { StageConfig } from "../types";
+import type { StageConfig, ZhuyinPuzzleConfig } from "../types";
 import { ageBands } from "./ageBands";
 import { r } from "./dialogue";
 
@@ -7,6 +7,14 @@ const baseAssist = {
   maxWrongClicksBeforeHint: 3,
   hitboxScale: 1.4,
 };
+
+const zhuyinPuzzle = (
+  imageAssetId: string,
+  word: string,
+  wordRuby: string,
+  firstSyllable: string,
+  choices: string[],
+): ZhuyinPuzzleConfig => ({ imageAssetId, word, wordRuby, answer: [firstSyllable], choices });
 
 export const stages: StageConfig[] = [
   {
@@ -139,7 +147,7 @@ export const stages: StageConfig[] = [
           id: "beginner",
           label: "初階",
           shortLabel: "初",
-          ageLabel: ageBands.preschoolWithAdult,
+          ageLabel: ageBands.preschool,
           skillLabel: "數 1–3 個物品",
           questionMode: "number-recognition",
         },
@@ -163,7 +171,7 @@ export const stages: StageConfig[] = [
           id: "boss",
           label: "魔王關",
           shortLabel: "王",
-          ageLabel: ageBands.schoolAgeChallenge,
+          ageLabel: ageBands.schoolAge,
           skillLabel: "乘法與綜合任務",
           questionMode: "challenge",
           unlockAfter: "advanced",
@@ -344,36 +352,27 @@ export const stages: StageConfig[] = [
     mechanic: "zhuyin",
     difficulty: 1,
     storyText: "老師正在整理聲音書，想請小航一起找出詞語的第一個音。",
-    instructionText: "看圖片、聽一聽，找出第一個注音。",
+    instructionText: "聽一聽，找出第一個注音。",
     storyRuby: [
       r("老師", "ㄌㄠˇ ㄕ"),
       "正在整理聲音書，想請",
       r("小航", "ㄒㄧㄠˇ ㄏㄤˊ"),
       "一起找出詞語的第一個音。",
     ],
-    instructionRuby: ["看圖片、聽一聽，找出第一個", r("注音", "ㄓㄨˋ ㄧㄣ"), "。"],
+    instructionRuby: ["聽一聽，找出第一個", r("注音", "ㄓㄨˋ ㄧㄣ"), "。"],
     zhuyinPuzzles: [
-      {
-        imageAssetId: "apple",
-        word: "蘋果",
-        wordRuby: "ㄆㄧㄥˊ ㄍㄨㄛˇ",
-        answer: ["ㄆㄧㄥˊ"],
-        choices: ["ㄆㄧㄥˊ", "ㄙㄨㄥ", "ㄇㄛˊ"],
-      },
-      {
-        imageAssetId: "pine_cone",
-        word: "松果",
-        wordRuby: "ㄙㄨㄥ ㄍㄨㄛˇ",
-        answer: ["ㄙㄨㄥ"],
-        choices: ["ㄈㄣˇ", "ㄙㄨㄥ", "ㄆㄧㄥˊ"],
-      },
-      {
-        imageAssetId: "mushroom",
-        word: "蘑菇",
-        wordRuby: "ㄇㄛˊ ㄍㄨ",
-        answer: ["ㄇㄛˊ"],
-        choices: ["ㄇㄛˊ", "ㄊㄨˋ", "ㄏㄨㄚ"],
-      },
+      zhuyinPuzzle("apple", "蘋果", "ㄆㄧㄥˊ ㄍㄨㄛˇ", "ㄆㄧㄥˊ", ["ㄆㄧㄥˊ", "ㄙㄨㄥ", "ㄇㄛˊ"]),
+      zhuyinPuzzle("pine_cone", "松果", "ㄙㄨㄥ ㄍㄨㄛˇ", "ㄙㄨㄥ", ["ㄙㄨㄥ", "ㄈㄣˇ", "ㄆㄧㄥˊ"]),
+      zhuyinPuzzle("mushroom", "蘑菇", "ㄇㄛˊ ㄍㄨ", "ㄇㄛˊ", ["ㄇㄛˊ", "ㄊㄨˋ", "ㄏㄨㄚ"]),
+      zhuyinPuzzle("pink_flower", "香蕉", "ㄒㄧㄤ ㄐㄧㄠ", "ㄒㄧㄤ", ["ㄒㄧㄤ", "ㄆㄧㄥˊ", "ㄇㄛˊ"]),
+      zhuyinPuzzle("acorn", "土豆", "ㄊㄨˇ ㄉㄡˋ", "ㄊㄨˇ", ["ㄊㄨˇ", "ㄙㄨㄥ", "ㄒㄧㄤ"]),
+      zhuyinPuzzle("bee", "狗狗", "ㄍㄡˇ ㄍㄡˇ", "ㄍㄡˇ", ["ㄍㄡˇ", "ㄇㄛˊ", "ㄊㄨˋ"]),
+      zhuyinPuzzle("blue_butterfly", "月亮", "ㄩㄝˋ ㄌㄧㄤˋ", "ㄩㄝˋ", ["ㄩㄝˋ", "ㄍㄨㄛˇ", "ㄌㄧㄤˋ"]),
+      zhuyinPuzzle("treasure_box", "大象", "ㄉㄚˋ ㄒㄧㄤˋ", "ㄉㄚˋ", ["ㄉㄚˋ", "ㄇㄚˇ", "ㄒㄩㄥˊ"]),
+      zhuyinPuzzle("fox_footprint", "河馬", "ㄏㄜˊ ㄇㄚˇ", "ㄏㄜˊ", ["ㄏㄜˊ", "ㄐㄧㄠ", "ㄊㄨˇ"]),
+      zhuyinPuzzle("red_butterfly", "青蛙", "ㄑㄧㄥ ㄨㄚ", "ㄑㄧㄥ", ["ㄑㄧㄥ", "ㄊㄠˊ", "ㄉㄡˋ"]),
+      zhuyinPuzzle("leaf", "兔子", "ㄊㄨˋ ㄗˇ", "ㄊㄨˋ", ["ㄊㄨˋ", "ㄒㄧㄤ", "ㄨㄚ"]),
+      zhuyinPuzzle("mushroom", "熊熊", "ㄒㄩㄥˊ ㄒㄩㄥˊ", "ㄒㄩㄥˊ", ["ㄒㄩㄥˊ", "ㄇㄛˊ", "ㄌㄧㄤˋ"]),
     ],
     assist: { ...baseAssist, hintDelayMs: 12000 },
     reward: { stars: 1, stickers: ["pink_flower"] },

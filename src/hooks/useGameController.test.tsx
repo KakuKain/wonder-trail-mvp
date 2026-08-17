@@ -341,7 +341,7 @@ describe("game controller market timers", () => {
 
     act(() => controller.result.current.actions.answerZhuyin(correct));
     expect(controller.result.current.view.zhuyin.answerParts).toEqual([correct]);
-    expect(controller.result.current.view.zhuyin.totalQuestions).toBe(3);
+    expect(controller.result.current.view.zhuyin.totalQuestions).toBe(5);
     expect(controller.result.current.view.zhuyin.questionIndex).toBe(0);
 
     act(() => controller.result.current.actions.continueZhuyin());
@@ -354,12 +354,18 @@ describe("game controller market timers", () => {
     act(() => controller.result.current.startStage(6));
     act(() => controller.result.current.actions.selectZhuyinLevel("listen"));
 
+    const puzzles = controller.result.current.view.zhuyin.puzzles;
+    expect(puzzles).toHaveLength(5);
+    expect(new Set(puzzles.map((item) => item.word)).size).toBe(5);
+    expect(stages[6].zhuyinPuzzles).toHaveLength(12);
     const question = controller.result.current.view.zhuyin.question;
     const puzzle = controller.result.current.view.zhuyin.puzzle;
     expect(question?.choiceKind).toBe("text");
     expect(question?.answerParts).toEqual([puzzle?.answer[0]]);
     expect(question?.choices).not.toContain(puzzle?.imageAssetId);
-    expect(new Set(question?.choices)).toEqual(new Set(["ㄆㄧㄥˊ", "ㄙㄨㄥ", "ㄇㄛˊ"]));
+    expect(question?.choices).toHaveLength(3);
+    expect(question?.choices).toContain(question?.answerParts[0]);
+    expect(question?.choices.every((choice) => typeof choice === "string")).toBe(true);
   });
 
   it("renders every full-word choice with the same vertical zhuyin treatment", () => {
@@ -373,12 +379,14 @@ describe("game controller market timers", () => {
     expect(question?.choices.every((choice) => Boolean(question.choiceCharacters?.[choice]))).toBe(true);
   });
 
-  it("finishes the school task only after the last answer is continued", () => {
+  it("continues into the next school practice without a completion screen", () => {
     const controller = renderHook(() => useGameController(stages.length));
     act(() => controller.result.current.startStage(6));
     act(() => controller.result.current.actions.selectZhuyinLevel("initial"));
 
-    for (let index = 0; index < 3; index += 1) {
+    const questionCount = controller.result.current.view.zhuyin.totalQuestions;
+    expect(questionCount).toBe(5);
+    for (let index = 0; index < questionCount; index += 1) {
       const question = controller.result.current.view.zhuyin.question;
       if (!question) throw new Error("Expected a zhuyin question");
       act(() => controller.result.current.actions.answerZhuyin(question.answerParts[0]));
@@ -386,10 +394,34 @@ describe("game controller market timers", () => {
       act(() => controller.result.current.actions.continueZhuyin());
     }
 
-    expect(controller.result.current.screen).toBe("complete");
-    expect(controller.result.current.lastCompletionWasNew).toBe(true);
+    expect(controller.result.current.screen).toBe("stage");
+    expect(controller.result.current.lastCompletionWasNew).toBe(false);
     expect(controller.result.current.save.completedStageIds).toContain("school_zhuyin_01");
     expect(controller.result.current.save.completedZhuyinLevels).toContain("initial");
+    expect(controller.result.current.view.zhuyin.level).toBe("listen");
+  });
+
+  it("starts school at the next practice and returns to the map after the route", () => {
+    const controller = renderHook(() => useGameController(stages.length));
+    act(() => controller.result.current.actions.startSchool());
+    expect(controller.result.current.screen).toBe("stage");
+    expect(controller.result.current.view.zhuyin.level).toBe("listen");
+
+    for (const expectedLevel of ["listen", "initial", "syllable", "word"] as const) {
+      expect(controller.result.current.view.zhuyin.level).toBe(expectedLevel);
+      const questionCount = controller.result.current.view.zhuyin.totalQuestions;
+      expect(questionCount).toBe(5);
+      for (let index = 0; index < questionCount; index += 1) {
+        const question = controller.result.current.view.zhuyin.question;
+        if (!question) throw new Error("Expected a zhuyin question");
+        question.answerParts.forEach((part) => act(() => controller.result.current.actions.answerZhuyin(part)));
+        act(() => controller.result.current.actions.continueZhuyin());
+      }
+    }
+
+    expect(controller.result.current.screen).toBe("intro");
+    expect(controller.result.current.view.zhuyin.level).toBeNull();
+    expect(controller.result.current.save.completedZhuyinLevels).toEqual(["listen", "initial", "syllable", "word"]);
   });
 
   it("builds one syllable in the required order", () => {

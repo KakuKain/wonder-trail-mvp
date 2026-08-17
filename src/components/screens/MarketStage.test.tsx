@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { marketCustomerForRound } from "../../data/marketCustomers";
 import { stages } from "../../data/stages";
@@ -116,7 +116,7 @@ describe("MarketStage feedback", () => {
     expect(screen.getByRole("button", { name: "開啟聲音" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "蘋果" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "蘋果，2 貝" })).toBeNull();
-    expect(screen.getByText("第 1/5 位")).toBeTruthy();
+    expect(screen.queryByText("第 1/5 位")).toBeNull();
   });
 
   it("shows a manual next-level button after the correct answer", () => {
@@ -124,9 +124,10 @@ describe("MarketStage feedback", () => {
     const challenge = puzzle?.challenges.find((item) => item.difficulty === "beginner");
     if (!puzzle || !challenge) throw new Error("Expected beginner market data");
     const total = marketQuestionValue(challenge, "number-recognition");
+    const options = marketAnswerOptions(total, challenge.id);
     const onContinue = vi.fn();
 
-    render(<MarketStage
+    const { container } = render(<MarketStage
       challenge={challenge}
       customer={marketCustomerForRound("beginner", 0)}
       completionWasNew={false}
@@ -166,7 +167,14 @@ describe("MarketStage feedback", () => {
       onContinue={onContinue}
     />);
 
-    const nextButton = screen.getByRole("button", { name: "前往下一關" });
+    const scoped = within(container);
+    const nextButton = scoped.getByRole("button", { name: "前往下一關" });
+    const answerButtons = options.map((value) => scoped.getByRole("button", { name: `選擇 ${value} 個` }));
+    expect(answerButtons).toHaveLength(options.length);
+    expect(scoped.getByRole("button", { name: `選擇 ${total} 個` }).classList.contains("correct")).toBe(true);
+    expect(answerButtons.filter((button) => !button.classList.contains("correct")).every((button) => button.classList.contains("wrong") === false)).toBe(true);
+    expect(answerButtons.filter((button) => !button.classList.contains("correct")).every((button) => button.hasAttribute("disabled"))).toBe(true);
+    expect(nextButton.previousElementSibling?.classList.contains("market-answer-options")).toBe(true);
     fireEvent.click(nextButton);
     expect(onContinue).toHaveBeenCalledTimes(1);
   });

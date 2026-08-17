@@ -22,18 +22,51 @@ const initialByWord: Record<string, { answer: string; choices: string[] }> = {
   蘋果: { answer: "ㄆ", choices: ["ㄅ", "ㄆ", "ㄇ"] },
   松果: { answer: "ㄙ", choices: ["ㄕ", "ㄙ", "ㄒ"] },
   蘑菇: { answer: "ㄇ", choices: ["ㄇ", "ㄋ", "ㄅ"] },
+  香蕉: { answer: "ㄒ", choices: ["ㄒ", "ㄐ", "ㄊ"] },
+  土豆: { answer: "ㄊ", choices: ["ㄊ", "ㄉ", "ㄌ"] },
+  狗狗: { answer: "ㄍ", choices: ["ㄍ", "ㄎ", "ㄏ"] },
+  月亮: { answer: "ㄩ", choices: ["ㄩ", "ㄨ", "ㄧ"] },
+  大象: { answer: "ㄉ", choices: ["ㄉ", "ㄊ", "ㄋ"] },
+  河馬: { answer: "ㄏ", choices: ["ㄏ", "ㄍ", "ㄎ"] },
+  青蛙: { answer: "ㄑ", choices: ["ㄑ", "ㄐ", "ㄒ"] },
+  兔子: { answer: "ㄊ", choices: ["ㄊ", "ㄉ", "ㄋ"] },
+  熊熊: { answer: "ㄒ", choices: ["ㄒ", "ㄕ", "ㄎ"] },
 };
 const partsByWord: Record<string, string[]> = {
   蘋果: ["ㄆ", "ㄧㄥ", "ˊ"], 松果: ["ㄙ", "ㄨㄥ"], 蘑菇: ["ㄇ", "ㄛ", "ˊ"],
+  香蕉: ["ㄒ", "ㄧㄤ"], 土豆: ["ㄊ", "ㄨ", "ˇ"], 狗狗: ["ㄍ", "ㄡ", "ˇ"],
+  月亮: ["ㄩ", "ㄝ", "ˋ"], 大象: ["ㄉ", "ㄚ", "ˋ"], 河馬: ["ㄏ", "ㄜ", "ˊ"],
+  青蛙: ["ㄑ", "ㄧㄥ"], 兔子: ["ㄊ", "ㄨ", "ˋ"], 熊熊: ["ㄒ", "ㄩㄥ", "ˊ"],
 };
 const wordPartsByWord: Record<string, string[]> = {
   蘋果: ["ㄆㄧㄥˊ", "ㄍㄨㄛˇ"], 松果: ["ㄙㄨㄥ", "ㄍㄨㄛˇ"], 蘑菇: ["ㄇㄛˊ", "ㄍㄨ"],
+  香蕉: ["ㄒㄧㄤ", "ㄐㄧㄠ"], 土豆: ["ㄊㄨˇ", "ㄉㄡˋ"], 狗狗: ["ㄍㄡˇ", "ㄍㄡˇ"],
+  月亮: ["ㄩㄝˋ", "ㄌㄧㄤˋ"], 大象: ["ㄉㄚˋ", "ㄒㄧㄤˋ"], 河馬: ["ㄏㄜˊ", "ㄇㄚˇ"],
+  青蛙: ["ㄑㄧㄥ", "ㄨㄚ"], 兔子: ["ㄊㄨˋ", "ㄗˇ"], 熊熊: ["ㄒㄩㄥˊ", "ㄒㄩㄥˊ"],
 };
 const partDistractors: Record<string, string[]> = {
   蘋果: ["ㄆ", "ㄅ", "ㄧㄥ", "ㄧㄣ", "ˊ", "ˇ"],
   松果: ["ㄙ", "ㄕ", "ㄨㄥ", "ㄨㄢ"],
   蘑菇: ["ㄇ", "ㄋ", "ㄛ", "ㄜ", "ˊ", "ˇ"],
+  香蕉: ["ㄒ", "ㄕ", "ㄧㄤ", "ㄧㄢ"],
+  土豆: ["ㄊ", "ㄉ", "ㄨ", "ㄛ", "ˇ", "ˋ"],
+  狗狗: ["ㄍ", "ㄎ", "ㄡ", "ㄢ", "ˇ", "ˊ"],
+  月亮: ["ㄩ", "ㄨ", "ㄝ", "ㄟ", "ˋ", "ˊ"],
+  大象: ["ㄉ", "ㄊ", "ㄚ", "ㄞ", "ˋ", "ˊ"],
+  河馬: ["ㄏ", "ㄍ", "ㄜ", "ㄠ", "ˊ", "ˇ"],
+  青蛙: ["ㄑ", "ㄐ", "ㄧㄥ", "ㄧㄣ"],
+  兔子: ["ㄊ", "ㄉ", "ㄨ", "ㄩ", "ˋ", "ˇ"],
+  熊熊: ["ㄒ", "ㄕ", "ㄩㄥ", "ㄩㄢ", "ˊ", "ˇ"],
 };
+const wordDistractors: Record<string, { value: string; character: string }> = {
+  蘋果: { value: "ㄆㄧㄣˊ", character: "頻" }, 松果: { value: "ㄙㄨㄟˋ", character: "碎" }, 蘑菇: { value: "ㄍㄨㄛ", character: "郭" },
+  香蕉: { value: "ㄒㄧㄤˇ", character: "想" }, 土豆: { value: "ㄊㄨㄥˊ", character: "同" }, 狗狗: { value: "ㄍㄡˋ", character: "夠" },
+  月亮: { value: "ㄩㄢˊ", character: "圓" }, 大象: { value: "ㄉㄢˋ", character: "蛋" }, 河馬: { value: "ㄏㄜˋ", character: "賀" },
+  青蛙: { value: "ㄑㄧㄢˊ", character: "前" }, 兔子: { value: "ㄊㄨㄢˊ", character: "團" }, 熊熊: { value: "ㄒㄩㄢˊ", character: "玄" },
+};
+const wordChoiceFallbacks = ["ㄇㄛˊ", "ㄙㄨㄥ", "ㄆㄧㄥˊ", "ㄒㄩㄥˊ"];
+
+const questionsPerRound = 5;
 
 export function useZhuyinFlow({ game, logEvent, speak, persistSave }: {
   game: GameState; logEvent: LogEvent; speak: Speak; persistSave: (save: SaveData) => boolean;
@@ -44,7 +77,7 @@ export function useZhuyinFlow({ game, logEvent, speak, persistSave }: {
   const level = game.zhuyinLevel;
   const sourcePuzzles = useMemo(() => stage.mechanic === "zhuyin" ? (stage.zhuyinPuzzles ?? []) : [], [stage]);
   const puzzles = useMemo(
-    () => seededShuffle(sourcePuzzles, `${game.zhuyinRoundSeed}:${level ?? "levels"}`),
+    () => seededShuffle(sourcePuzzles, `${game.zhuyinRoundSeed}:${level ?? "levels"}`).slice(0, questionsPerRound),
     [game.zhuyinRoundSeed, level, sourcePuzzles],
   );
   const puzzle = puzzles[game.zhuyinQuestionIndex] ?? puzzles[0];
@@ -52,8 +85,10 @@ export function useZhuyinFlow({ game, logEvent, speak, persistSave }: {
   const question = useMemo(() => {
     if (!puzzle || !level) return null;
     if (level === "listen") return {
-      prompt: "聽一聽，選出你聽到的注音", answerParts: [puzzle.answer[0]], choices: seededShuffle(puzzles.map((item) => item.answer[0]), `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`),
-      choiceCharacters: Object.fromEntries(puzzles.map((item) => [item.answer[0], item.word[0]])), choiceKind: "text" as const,
+      prompt: "聽一聽，選出你聽到的注音", answerParts: [puzzle.answer[0]], choices: seededShuffle(
+        [puzzle.answer[0], ...seededShuffle(sourcePuzzles.filter((item) => item.word !== puzzle.word), `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:distractors`).map((item) => item.answer[0]).filter((answer, index, answers) => answers.indexOf(answer) === index).slice(0, 2)],
+        `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`,
+      ), choiceCharacters: Object.fromEntries(sourcePuzzles.map((item) => [item.answer[0], item.word[0]])), choiceKind: "text" as const,
     };
     if (level === "initial") return {
       prompt: `「${puzzle.word[0]}」從哪一個聲音開始？`, answerParts: [initialByWord[puzzle.word].answer], choices: seededShuffle(initialByWord[puzzle.word].choices, `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`), choiceKind: "text" as const,
@@ -62,17 +97,25 @@ export function useZhuyinFlow({ game, logEvent, speak, persistSave }: {
       prompt: `把「${puzzle.word[0]}」的聲音拼起來`, answerParts: partsByWord[puzzle.word], choices: seededShuffle(partDistractors[puzzle.word], `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`), choiceKind: "text" as const,
     };
     const answerParts = wordPartsByWord[puzzle.word];
-    const distractor = puzzle.word === "蘋果" ? "ㄆㄧㄣˊ" : "ㄍㄨㄛ";
+    const distractor = wordDistractors[puzzle.word] ?? { value: "ㄍㄨㄛ", character: "郭" };
+    const uniqueAnswerParts = [...new Set(answerParts)];
+    const wordChoiceCharacters = Object.fromEntries(sourcePuzzles.flatMap((item) =>
+      (wordPartsByWord[item.word] ?? []).map((part, index) => [part, item.word[index]]),
+    ));
+    const extraDistractors = [distractor.value, ...wordChoiceFallbacks]
+      .filter((value, index, values) => values.indexOf(value) === index && !uniqueAnswerParts.includes(value))
+      .slice(0, Math.max(1, 3 - uniqueAnswerParts.length));
+    const choices = seededShuffle([...uniqueAnswerParts, ...extraDistractors], `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`);
     return {
       prompt: `依序拼出「${puzzle.word}」`, answerParts,
-      choices: seededShuffle([...answerParts, distractor], `${game.zhuyinRoundSeed}:${level}:${puzzle.word}:choices`),
+      choices,
       choiceCharacters: {
-        ...Object.fromEntries(answerParts.map((part, index) => [part, puzzle.word[index]])),
-        [distractor]: distractor === "ㄆㄧㄣˊ" ? "頻" : "郭",
+        ...wordChoiceCharacters,
+        [distractor.value]: distractor.character,
       },
       choiceKind: "text" as const,
     };
-  }, [game.zhuyinRoundSeed, level, puzzle, puzzles]);
+  }, [game.zhuyinRoundSeed, level, puzzle, sourcePuzzles]);
 
   const answeredCorrectly = !!question && game.zhuyinAnswerParts.length === question.answerParts.length
     && game.zhuyinAnswerParts.every((part, index) => part === question.answerParts[index]);
@@ -145,13 +188,22 @@ export function useZhuyinFlow({ game, logEvent, speak, persistSave }: {
     const nextSave = completeStageSave(saveWithLevel, stage.id, stage.reward, new Date().toISOString());
     if (!persistSave(nextSave)) { finishing.current = false; return; }
     clearZhuyinTimers();
-    game.setLastCompletionWasNew(completionWasNew);
-    game.setReward(stage.reward);
-    game.setScreen("complete");
-    const selectedLevel = zhuyinLevels.find((item) => item.id === level);
-    speak(`${selectedLevel?.title ?? "聲音任務"}完成！你學會新的聲音本領了！`, { tone: "positive", interrupt: true });
     logEvent("stage_finish", stage.id, { level, wrongClicks: game.wrongClicks, hintsUsed: game.hintsUsed });
-  }, [answeredCorrectly, clearZhuyinTimers, game, level, logEvent, persistSave, puzzle, speak, stage]);
+
+    const nextLevel = zhuyinLevels.find((item) => !saveWithLevel.completedZhuyinLevels.includes(item.id));
+    if (nextLevel) {
+      game.setLastCompletionWasNew(false);
+      game.setReward(null);
+      selectZhuyinLevel(nextLevel.id);
+      return;
+    }
+
+    game.setLastCompletionWasNew(completionWasNew);
+    game.setReward(null);
+    game.setZhuyinLevel(null);
+    game.setScreen("intro");
+    speak("學校的聲音練習完成了！回到島嶼看看吧！", { tone: "positive", interrupt: true });
+  }, [answeredCorrectly, clearZhuyinTimers, game, level, logEvent, persistSave, puzzle, selectZhuyinLevel, speak, stage]);
 
   const continueZhuyin = useCallback(() => {
     if (!answeredCorrectly) return;
