@@ -3544,8 +3544,17 @@ p {
   transform: translateY(5%);
 }
 
-/* Keep ears, antlers and tall head shapes inside the circular portrait. */
-.market-customer-avatar.market-customer-rabbit img { object-position: center 29%; }
+/* Keep the rabbit's complete ears and face inside the circular portrait.
+ * Its source artwork is a full-body illustration, so contain would make the
+ * image box taller than the portrait and clip the chin at the bottom. Crop
+ * the lower body instead, anchoring the portrait to the top of the artwork. */
+.market-customer-avatar.market-customer-rabbit img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 12%;
+  transform: none;
+}
 .market-customer-avatar.market-customer-deer img { object-position: center 27%; }
 .market-customer-avatar.market-customer-fox img { object-position: center 28%; }
 .market-customer-avatar.market-customer-owl img { object-position: center 26%; }
