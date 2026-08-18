@@ -4,7 +4,7 @@ import { marketCustomerForRound } from "../data/marketCustomers";
 import { voiceScripts } from "../data/voiceScripts";
 import { stages } from "../data/stages";
 import { advanceMarketProgress, completeStageSave, selectMarketDifficulty as getMarketDifficultySelection } from "../lib/gameFlow";
-import { marketAnswerOptions, marketBasketMatches, marketCustomerReminder, marketCustomersPerShift, marketOrderSignature, marketQuantityPrompt, marketQuestionValue, marketRequiredCount, randomizeMarketChallenge, selectMarketChallengeTemplate } from "../lib/market";
+import { marketAnswerOptions, marketBasketMatches, marketCustomerReminder, marketCustomersPerShift, marketItemSpeech, marketOrderSignature, marketQuantityPrompt, marketQuestionValue, marketRequiredCount, randomizeMarketChallenge, selectMarketChallengeTemplate } from "../lib/market";
 import { markMarketStorySeen } from "../lib/marketSession";
 import type { GameEvent, MarketDifficultyId, MarketQuestionMode, SaveData } from "../types";
 import { VoiceQueue } from "../lib/voiceEngine";
@@ -213,9 +213,12 @@ export function useMarketFlow({ game, logEvent, speak, persistSave }: Props) {
       speak(`差一點點，${retryText}`, { tone: "soft", interrupt: true });
       return;
     }
+    const numberItem = activeDifficulty?.questionMode === "number-recognition" && challenge.order.length === 1 ? challenge.order[0] : undefined;
     const successText = activeDifficulty?.questionMode === "number-recognition"
-      ? `謝謝小航！一共有 ${question} 個，你數對了！`
-      : `謝謝小航！一共 ${question} 貝，你算對了！`;
+      ? numberItem
+        ? `謝謝小航！你數對了 ${question} ${marketItemSpeech[numberItem.assetId]?.counter ?? "個"}${assets[numberItem.assetId].label}。`
+        : `謝謝小航！你數對了 ${question} 個商品。`
+      : `謝謝小航！你算對了 ${question} 貝。`;
     marketAnswerLocked.current = true;
     if (marketHintTimer.current !== null) window.clearTimeout(marketHintTimer.current);
     marketHintTimer.current = null;

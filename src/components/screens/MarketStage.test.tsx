@@ -71,7 +71,7 @@ describe("MarketStage feedback", () => {
     if (!puzzle || !challenge) throw new Error("Expected beginner market data");
     const total = marketQuestionValue(challenge, "number-recognition");
 
-    render(<MarketStage
+    const { container } = render(<MarketStage
       challenge={challenge}
       customer={marketCustomerForRound("beginner", 0)}
       completionWasNew={false}
@@ -116,6 +116,7 @@ describe("MarketStage feedback", () => {
     expect(screen.getByRole("button", { name: "開啟聲音" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "蘋果" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "蘋果，2 貝" })).toBeNull();
+    expect(container.querySelector(".market-art-basket-front")).toBeTruthy();
     expect(screen.queryByText("第 1/5 位")).toBeNull();
   });
 
@@ -168,9 +169,10 @@ describe("MarketStage feedback", () => {
     />);
 
     const scoped = within(container);
-    const nextButton = scoped.getByRole("button", { name: "前往下一關" });
+    const nextButton = scoped.getByRole("button", { name: "下一位客人" });
     const answerButtons = options.map((value) => scoped.getByRole("button", { name: `選擇 ${value} 個` }));
     expect(answerButtons).toHaveLength(options.length);
+    expect(container.querySelector(".market-checkout-basket-front")?.tagName).toBe("IMG");
     expect(scoped.getByRole("button", { name: `選擇 ${total} 個` }).classList.contains("correct")).toBe(true);
     expect(answerButtons.filter((button) => !button.classList.contains("correct")).every((button) => button.classList.contains("wrong") === false)).toBe(true);
     expect(answerButtons.filter((button) => !button.classList.contains("correct")).every((button) => button.hasAttribute("disabled"))).toBe(true);

@@ -130,7 +130,6 @@ describe("game controller market timers", () => {
     const controller = renderMarketController();
     const customerIds: string[] = [];
     const orderSignatures: string[] = [];
-    const correctPositions: number[] = [];
 
     for (let round = 0; round < marketCustomersPerShift; round += 1) {
       const market = controller.result.current.view.market;
@@ -139,14 +138,11 @@ describe("game controller market timers", () => {
       expect(orderSignatures.slice(-4)).not.toContain(signature);
       customerIds.push(market.customer.id);
       orderSignatures.push(signature);
-      correctPositions.push(market.answerChoices.indexOf(market.question));
+      expect(market.answerChoices).toEqual([...market.answerChoices].sort((left, right) => left - right));
       finishCurrentMarketOrder(controller);
     }
 
     expect(new Set(customerIds).size).toBe(marketCustomersPerShift);
-    for (let index = 2; index < correctPositions.length; index += 1) {
-      expect(new Set(correctPositions.slice(index - 2, index + 1)).size).toBeGreaterThan(1);
-    }
   });
 
   it("waits for the child to continue after a correct answer and advances only once", () => {
@@ -162,7 +158,7 @@ describe("game controller market timers", () => {
     expect(controller.result.current.marketChallengeIndex).toBe(0);
     expect(controller.result.current.view.market.phase).toBe("total");
     expect(controller.result.current.marketSelectedTotal).toBe(question);
-    expect(controller.result.current.marketFeedback).toBe(`謝謝小航！一共有 ${question} 個，你數對了！`);
+    expect(controller.result.current.marketFeedback).toMatch(new RegExp(`^謝謝小航！你數對了 ${question} `));
     expect(controller.result.current.hintVisible).toBe(false);
 
     act(() => {
@@ -183,7 +179,7 @@ describe("game controller market timers", () => {
     });
 
     expect(controller.result.current.marketSelectedTotal).toBe(question);
-    expect(controller.result.current.marketFeedback).toBe(`謝謝小航！一共有 ${question} 個，你數對了！`);
+    expect(controller.result.current.marketFeedback).toMatch(new RegExp(`^謝謝小航！你數對了 ${question} `));
     expect(controller.result.current.wrongClicks).toBe(0);
 
     act(() => vi.advanceTimersByTime(10_000));

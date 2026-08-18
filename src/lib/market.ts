@@ -67,24 +67,14 @@ function signatureAssets(signature: string) {
 
 export function marketAnswerOptions(total: number, seed: number | string, recentCorrectPositions: number[] = []) {
   const candidates = Array.from(new Set([total - 1, total, total + 1, total + 2].filter((value) => value > 0))).slice(0, 3);
-  const random = createRandom(seed);
-  for (let index = candidates.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(random() * (index + 1));
-    [candidates[index], candidates[swapIndex]] = [candidates[swapIndex], candidates[index]];
-  }
-
-  const lastTwoPositions = recentCorrectPositions.slice(-2);
-  const correctPosition = candidates.indexOf(total);
-  if (
-    candidates.length > 1
-    && lastTwoPositions.length === 2
-    && lastTwoPositions[0] === correctPosition
-    && lastTwoPositions[1] === correctPosition
-  ) {
-    const alternatePosition = (correctPosition + 1) % candidates.length;
-    [candidates[correctPosition], candidates[alternatePosition]] = [candidates[alternatePosition], candidates[correctPosition]];
-  }
-  return candidates;
+  // Keep the answer rail spatially stable: the basket and the register are
+  // teaching one quantity, so the choices should read left-to-right instead
+  // of jumping around between rounds. The challenge, customer and item art
+  // are still randomized independently; only the visual order of the
+  // numeric choices is fixed for predictable early-learning interaction.
+  void seed;
+  void recentCorrectPositions;
+  return candidates.sort((left, right) => left - right);
 }
 export function isMarketDifficultyUnlocked(difficulty: MarketDifficultyConfig, completed: MarketDifficultyId[]) { return !difficulty.unlockAfter || completed.includes(difficulty.unlockAfter); }
 export function marketCalculationLines(challenge: MarketChallengeConfig) { return challenge.order.flatMap((item) => Array.from({ length: item.count }, (_, index) => ({ key: `${item.assetId}-${index}`, assetId: item.assetId, price: marketPrice(challenge, item.assetId) }))); }
@@ -110,12 +100,27 @@ function createRandomizedMarketChallenge(template: MarketChallengeConfig, seed: 
   for (let index = shuffledItems.length - 1; index > 0; index -= 1) { const swapIndex = Math.floor(random() * (index + 1)); [shuffledItems[index], shuffledItems[swapIndex]] = [shuffledItems[swapIndex], shuffledItems[index]]; }
   const rule = marketDifficultyRules[template.difficulty]; const itemTypeCount = randomBetween(rule.itemTypeMinimum, rule.itemTypeMaximum); const totalCount = randomBetween(Math.max(rule.itemCountMinimum, itemTypeCount), rule.itemCountMaximum); const order = shuffledItems.slice(0, itemTypeCount).map((assetId) => ({ assetId, count: 1 }));
   for (let remaining = totalCount - itemTypeCount; remaining > 0; remaining -= 1) order[Math.floor(random() * order.length)].count += 1;
+  const pricePool = Array.from({ length: 5 }, (_, index) => index + 1);
+  for (let index = pricePool.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [pricePool[index], pricePool[swapIndex]] = [pricePool[swapIndex], pricePool[index]];
+  }
+  const priceStart = Math.floor(random() * (pricePool.length - order.length + 1));
+  const prices = Object.fromEntries(order.map((item, index) => [item.assetId, pricePool[priceStart + index]]));
+  const priceTotal = () => order.reduce((sum, item) => sum + item.count * (prices[item.assetId] ?? 0), 0);
+  while (priceTotal() > rule.answerMaximum) {
+    const reducible = [...order]
+      .filter((item) => (prices[item.assetId] ?? 0) > 1)
+      .sort((left, right) => (prices[right.assetId] ?? 0) * right.count - (prices[left.assetId] ?? 0) * left.count)[0];
+    if (!reducible) break;
+    prices[reducible.assetId] -= 1;
+  }
   const joiner = (index: number) => index === order.length - 1 ? "和 " : "、";
   const itemPhrases = order.map((item) => `${item.count} ${marketItemSpeech[item.assetId].counter}${assets[item.assetId].label}`);
   const requestItems = itemPhrases.length < 2 ? itemPhrases[0] : `${itemPhrases.slice(0, -1).join("、")}和 ${itemPhrases.at(-1)}`;
   const requestText = `我想買 ${requestItems}。`;
   const requestRuby: RubySegment[] = ["我想買 "]; order.forEach((item, index) => { if (index > 0) requestRuby.push(joiner(index)); const speech = marketItemSpeech[item.assetId]; requestRuby.push(`${item.count} ${speech.counter}`, { text: assets[item.assetId].label, ruby: speech.ruby }); }); requestRuby.push("。");
-  return { ...template, requestText, requestRuby, order, prices: Object.fromEntries(order.map((item) => [item.assetId, marketItemPrices[item.assetId]])) };
+  return { ...template, requestText, requestRuby, order, prices };
 }
 
 export function randomizeMarketChallenge(template: MarketChallengeConfig, seed: number, recentOrderSignatures: string[] = []) {

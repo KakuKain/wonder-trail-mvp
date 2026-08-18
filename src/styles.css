@@ -1805,7 +1805,10 @@ p {
 
 .market-checkout-screen-correct .market-checkout-basket-art {
   opacity: 0.96;
-  transform: translate(-58px, 17px) scale(0.74);
+  /* Keep the basket on the same centre line as the register and its answer
+     rail. The previous left shift made the counted object appear detached
+     from the choices below it on the success state. */
+  transform: translate(0, 17px) scale(0.74);
   transform-origin: center bottom;
   transition: transform 220ms ease-out;
 }
@@ -2578,6 +2581,8 @@ p {
 .market-checkout-basket-front {
   z-index: 3;
   pointer-events: none;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
 .market-checkout-basket-items {
@@ -2771,14 +2776,18 @@ p {
 }
 
 .market-register-feedback {
-  min-height: 23px;
-  margin: 4px 0 0;
-  color: #587044;
-  font-family: var(--ui-number-font);
-  font-size: clamp(0.96rem, 4vw, 1.08rem);
-  font-weight: 850;
-  line-height: 1.15;
-  letter-spacing: 0.02em;
+  /* Prompts are spoken by the audio button; keep the live message available
+     to assistive technology without changing the register layout. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .market-register-controls {
@@ -2807,7 +2816,9 @@ p {
   height: 100%;
   aspect-ratio: auto;
   align-items: center;
-  gap: 5px;
+  min-width: 0;
+  padding-inline: 2px;
+  gap: 2px;
   border-radius: 16px;
   background: transparent;
 }
@@ -2817,16 +2828,18 @@ p {
 }
 
 .market-register-keys .market-answer-button strong {
-  font-size: clamp(2rem, 9vw, 2.6rem);
+  font-size: clamp(1.35rem, 6vw, 1.85rem);
   line-height: 1;
+  white-space: nowrap;
   text-shadow: 0 2px 0 rgba(255, 248, 220, 0.65);
 }
 
 .market-register-keys .market-answer-button span {
   align-self: center;
   font-family: var(--ui-number-font);
-  font-size: clamp(1.18rem, 5vw, 1.42rem);
+  font-size: clamp(0.82rem, 3.2vw, 1.1rem);
   line-height: 1;
+  white-space: nowrap;
   text-shadow: 0 1px 0 rgba(255, 248, 220, 0.65);
 }
 
@@ -3462,11 +3475,28 @@ p {
   height: auto;
 }
 
+.market-order-basket-art > img:first-child {
+  position: relative;
+  z-index: 1;
+}
+
+.market-art-basket-front {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
 .market-art-basket-items {
   position: absolute;
   top: 18%;
   right: 15%;
   left: 15%;
+  z-index: 2;
   display: flex;
   align-items: end;
   justify-content: center;
@@ -5156,7 +5186,7 @@ p {
   }
 
   .market-checkout-screen-correct .market-checkout-basket-art {
-    transform: translate(-48px, 12px) scale(0.64);
+    transform: translate(0, 12px) scale(0.64);
   }
 
   .market-cash-register {

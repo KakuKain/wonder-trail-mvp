@@ -25,14 +25,12 @@ describe("market rules", () => {
     expect(marketTotal(challenge)).toBe(7);
     expect(marketQuestionValue(challenge, "addition")).toBe(7);
     expect(marketQuestionValue(challenge, "number-recognition")).toBe(3);
-    expect(marketAnswerOptions(1, "one")).toEqual(expect.arrayContaining([1, 2, 3]));
+    expect(marketAnswerOptions(1, "one")).toEqual([1, 2, 3]);
   });
 
-  it("moves the correct answer when it occupied the same position twice", () => {
-    const original = marketAnswerOptions(5, 99);
-    const originalPosition = original.indexOf(5);
-    const adjusted = marketAnswerOptions(5, 99, [originalPosition, originalPosition]);
-    expect(adjusted.indexOf(5)).not.toBe(originalPosition);
+  it("keeps answer positions stable while challenge content changes", () => {
+    expect(marketAnswerOptions(5, 99)).toEqual([4, 5, 6]);
+    expect(marketAnswerOptions(5, 99, [1, 1])).toEqual([4, 5, 6]);
   });
 
   it("describes a beginner quantity question with the item's natural counter", () => {
@@ -52,6 +50,14 @@ describe("market rules", () => {
         expect(marketChallengeFitsDifficulty(randomizeMarketChallenge({ ...challenge, difficulty }, seed))).toBe(true);
       }
     }
+  });
+
+  it("varies generated price tags while keeping totals age-appropriate", () => {
+    const generated = Array.from({ length: 24 }, (_, seed) => randomizeMarketChallenge({ ...challenge, difficulty: "intermediate" }, seed));
+    const prices = generated.flatMap((item) => Object.values(item.prices));
+    expect(new Set(prices).size).toBeGreaterThan(2);
+    expect(prices.every((price) => price >= 1 && price <= 5)).toBe(true);
+    expect(generated.every(marketChallengeFitsDifficulty)).toBe(true);
   });
 
   it("uses Chinese list punctuation and only one final conjunction", () => {
