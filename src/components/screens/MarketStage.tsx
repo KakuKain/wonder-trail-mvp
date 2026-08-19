@@ -9,7 +9,6 @@ import marketBasketArt from "../../assets/market/market-basket-v2.webp";
 import marketCheckoutBasketArt from "../../assets/market/market-basket-clean-v2.webp";
 import marketBasketFrontArt from "../../assets/market/market-basket-front-v2.webp";
 import marketCashRegisterArt from "../../assets/market/market-cash-register-v2.webp";
-import marketCashRegisterSuccessArt from "../../assets/market/market-cash-register-success-v2.webp";
 import marketCheckoutCabinetArt from "../../assets/market/market-checkout-cabinet-v2.webp";
 import marketCheckoutBackground from "../../assets/market/market-checkout-background-v2.webp";
 import marketPriceTagArt from "../../assets/market/market-price-tag-v2.png";
@@ -62,7 +61,7 @@ type Props = {
 
 export function MarketStage({ challenge, customer, completionWasNew, currencyIntroText, currencyIntroRuby, showCurrencyIntro, difficulties, activeDifficulty, completedDifficulties, basket, phase, feedback, customerNumber, customerTarget, total, answerOptions, selectedTotal, hintVisible, renderObjectIcon, renderRubyText, homeIcon, hintIcon, lockIcon, speakerIcon, voiceSupported, voiceSpeaking, voiceMuted, onHome, onHint, onSpeak, onVoiceToggle, onStoryStart, onReplay, onDifficultySelect, onItemSelect, onAnswerSelect, onContinue }: Props) {
   useEffect(() => {
-    [marketCheckoutBackground, marketCheckoutBasketArt, marketBasketFrontArt, marketCashRegisterArt, marketCashRegisterSuccessArt, marketCheckoutCabinetArt, customer.image].forEach((source) => {
+    [marketCheckoutBackground, marketCheckoutBasketArt, marketBasketFrontArt, marketCashRegisterArt, marketCheckoutCabinetArt, customer.image].forEach((source) => {
       const image = new Image();
       image.src = source;
     });
@@ -165,7 +164,7 @@ export function MarketStage({ challenge, customer, completionWasNew, currencyInt
       <img className={`market-checkout-customer market-customer-${customer.id} ${answerLocked ? "market-checkout-customer-correct" : ""}`} src={customer.image} alt={`${customer.name}正在結帳`} />
       <section className="market-checkout-basket-art" aria-label="裝好的籃子"><span className="market-checkout-basket-base" style={{ backgroundImage: `url(${marketCheckoutBasketArt})` }} aria-hidden="true" /><div className="market-checkout-basket-items" aria-live="polite">{selectedBasketItems.map((item) => <span key={item.key} aria-label={`${assets[item.assetId].label}已放入`}>{renderObjectIcon(item.assetId, true)}</span>)}</div><img className="market-checkout-basket-front" src={marketBasketFrontArt} alt="" aria-hidden="true" /></section>
       <section className="market-cash-register" aria-label="收銀機答題">
-        <img className="market-cash-register-art" src={answerLocked ? marketCashRegisterSuccessArt : marketCashRegisterArt} alt="" aria-hidden="true" />
+        <img className="market-cash-register-art" src={marketCashRegisterArt} alt="" aria-hidden="true" />
         <button className={`market-register-audio ${voiceSpeaking ? "speaking" : ""}`} type="button" aria-label={!voiceSupported ? "此裝置不支援語音" : voiceMuted ? "聲音已關閉" : voiceSpeaking ? "重新播放語音" : answerLocked ? "播放稱讚語音" : "播放題目"} aria-pressed={voiceSpeaking} onClick={() => onSpeak(answerLocked ? `謝謝小航！${successMessage}` : checkoutSpeech, { interrupt: true })} disabled={!voiceSupported || voiceMuted}>{speakerIcon}</button>
         <div className={`market-register-display ${answerLocked ? "market-register-display-correct" : ""}`}>
           {answerLocked && <strong className="market-register-success-title">答對了！</strong>}
